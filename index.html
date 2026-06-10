@@ -5,12 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AKHLAQVERSE — Platform Akhlak Digital</title>
 
-  <!-- React 18 + Babel Standalone via unpkg (reliable for GitHub Pages) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
@@ -35,212 +33,196 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* No height/width constraints here — shell is self-sized */
       padding: 20px 0; /* breathing room top+bottom */
     }
 
-    /* ═══════════════════════════════════════
-       FIXED PHONE SHELL — 402 × 874 px
-       NEVER grows or shrinks
-    ═══════════════════════════════════════ */
-    #phone-shell {
-      /* Hard-locked dimensions */
-      width:  402px;
-      height: 874px;
-      min-width:  402px;
-      min-height: 874px;
-      max-width:  402px;
-      max-height: 874px;
+   /* ═══════════════════════════════════════
+     FIXED PHONE SHELL — 402 × 874 px
+     OVERFLOW: HIDDEN (ANTI-BOCOR KONTEN)
+     ═══════════════════════════════════════ */
+  #phone-shell {
+    /* Hard-locked dimensions */
+    width:  402px;
+    height: 874px;
+    min-width:  402px;
+    min-height: 874px;
+    max-width:  402px;
+    max-height: 874px;
 
-      /* iPhone-style frame */
+    /* iPhone-style frame */
+    background: #fff;
+    border-radius: 52px;
+    overflow: hidden !important; /* Memastikan konten terpotong rapi di radius bingkai */
+    flex-shrink: 0;
+    position: relative;
+
+    /* Stack children as flex column so app-inner fills the space */
+    display: flex;
+    flex-direction: column;
+
+    /* Outer chrome ring + MODIFIKASI: Soft modern shadow & glow */
+    box-shadow:
+      0 0 0 2px  #3a3a3a,
+      0 0 0 11px #1a1a1a,
+      0 0 0 13px #2d2d2d,
+      0 20px 50px rgba(0,0,0,.6),
+      0 0 60px rgba(99,102,241,.1);
+  }
+
+  /* Dynamic island / notch */
+  #phone-shell::before {
+    content: '';
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 30px;
+    background: #1a1a1a;
+    border-radius: 20px;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  /* Home indicator */
+  #phone-shell::after {
+    content: '';
+    position: absolute;
+    bottom: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 5px;
+    background: rgba(0,0,0,.15);
+    border-radius: 3px;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  /* ── app-inner: fills shell, pads past notch & home bar ── */
+  #app-inner {
+    width:  100%;
+    height: 100%;
+    overflow: hidden !important;
+
+    /* Pad content away from hardware chrome */
+    padding-top:    42px;  /* clears dynamic island */
+    padding-bottom: 22px;  /* clears home indicator */
+
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  /* ── react-root: the React app lives here — fills remaining height ── */
+  #react-root {
+    flex: 1;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden !important;
+
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Background wallpaper behind the phone */
+  .desktop-bg {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 40%, #1a237e44 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 70%, #4a148c33 0%, transparent 60%),
+                linear-gradient(135deg, #0a0a0a 0%, #111827 100%);
+    z-index: -1;
+  }
+
+  /* Decorative blurred orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .orb-1 { width:400px;height:400px;background:#1cb0f6;top:-100px;left:-100px; }
+  .orb-2 { width:350px;height:350px;background:#58cc02;bottom:-80px;right:-80px; }
+  .orb-3 { width:250px;height:250px;background:#ce82ff;top:40%;right:5%; }
+
+  /* Tiny brand label under the phone */
+  .phone-label {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,.25);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Nunito', sans-serif;
+    white-space: nowrap;
+    z-index: 1;
+  }
+
+  /* ── Scale the fixed 402×874 shell to fit smaller desktop screens ── */
+  @media (max-height: 960px) { #phone-shell { transform: scale(0.94); transform-origin: center center; } }
+  @media (max-height: 880px) { #phone-shell { transform: scale(0.86); transform-origin: center center; } }
+  @media (max-height: 780px) { #phone-shell { transform: scale(0.76); transform-origin: center center; } }
+  @media (max-height: 680px) { #phone-shell { transform: scale(0.66); transform-origin: center center; } }
+
+  /* ── On actual phone: full-screen native feel ── */
+  @media (max-width: 440px) {
+    body {
       background: #fff;
-      border-radius: 52px;
+      align-items: flex-start;
+      justify-content: flex-start;
       overflow: hidden;
-      flex-shrink: 0;
-      position: relative;
-
-      /* Stack children as flex column so app-inner fills the space */
-      display: flex;
-      flex-direction: column;
-
-      /* Outer chrome ring + shadow */
-      box-shadow:
-        0 0 0 2px  #555,
-        0 0 0 11px #1a1a1a,
-        0 0 0 13px #3a3a3a,
-        0 40px 100px rgba(0,0,0,.85),
-        0  0   80px rgba(99,102,241,.15);
+      padding: 0;
     }
-
-    /* Dynamic island / notch */
-    #phone-shell::before {
-      content: '';
-      position: absolute;
-      top: 12px; left: 50%;
-      transform: translateX(-50%);
-      width: 120px; height: 30px;
-      background: #1a1a1a;
-      border-radius: 20px;
-      z-index: 9999;
-      pointer-events: none;
+    #root { padding: 0; }
+    #phone-shell {
+      width:      100vw  !important;
+      height:     100dvh !important;
+      min-width:  unset  !important;
+      min-height: unset  !important;
+      max-width:  unset  !important;
+      max-height: unset  !important;
+      border-radius: 0   !important;
+      box-shadow:  none  !important;
+      transform:   none  !important;
     }
-
-    /* Home indicator */
-    #phone-shell::after {
-      content: '';
-      position: absolute;
-      bottom: 10px; left: 50%;
-      transform: translateX(-50%);
-      width: 120px; height: 5px;
-      background: rgba(0,0,0,.35);
-      border-radius: 3px;
-      z-index: 9999;
-      pointer-events: none;
-    }
-
-    /* ── app-inner: fills shell, pads past notch & home bar ── */
+    #phone-shell::before, #phone-shell::after { display: none; }
     #app-inner {
-      /* Fill the shell exactly — no flex-grow tricks */
-      width:  100%;
-      height: 100%;
-      overflow: hidden;
-
-      /* Pad content away from hardware chrome */
-      padding-top:    42px;  /* clears dynamic island */
-      padding-bottom: 22px;  /* clears home indicator */
-
-      /* Flex column so react-root can flex:1 inside */
-      display: flex;
-      flex-direction: column;
-      box-sizing: border-box;
+      padding-top:    env(safe-area-inset-top,    0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
+    .desktop-bg, .orb, .phone-label { display: none; }
+  }
 
-    /* ── react-root: the React app lives here — fills remaining height ── */
-    #react-root {
-      /* Take ALL remaining height after padding — never grow beyond it */
-      flex: 1;
-      min-height: 0;
-      max-height: 100%;
-      overflow: hidden;
+  /* Animasi Halus & Pendukung Efek Layar Baru */
+  @keyframes pulse       { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.1);opacity:.4} }
+  @keyframes logoGlow    { 0%,100%{box-shadow: 0 0 20px rgba(88,204,2,0.3), 0 0 40px rgba(28,176,246,0.2);} 50%{box-shadow: 0 0 35px rgba(88,204,2,0.6), 0 0 60px rgba(28,176,246,0.4);} }
+  @keyframes slideUp     { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes slideDown   { from{transform:translateY(-10px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes popIn       { 0%{transform:scale(0.9);opacity:0} 100%{transform:scale(1);opacity:1} }
+  @keyframes floatUp     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes shake       { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+  @keyframes spin        { to{transform:rotate(360deg)} }
 
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-
-    /* Background wallpaper behind the phone */
-    .desktop-bg {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(ellipse at 30% 40%, #1a237e44 0%, transparent 60%),
-                  radial-gradient(ellipse at 70% 70%, #4a148c33 0%, transparent 60%),
-                  linear-gradient(135deg, #0a0a0a 0%, #111827 100%);
-      z-index: -1;
-    }
-
-    /* Decorative blurred orbs */
-    .orb {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.4;
-      pointer-events: none;
-      z-index: -1;
-    }
-    .orb-1 { width:400px;height:400px;background:#1cb0f6;top:-100px;left:-100px; }
-    .orb-2 { width:350px;height:350px;background:#58cc02;bottom:-80px;right:-80px; }
-    .orb-3 { width:250px;height:250px;background:#ce82ff;top:40%;right:5%; }
-
-    /* Tiny brand label under the phone */
-    .phone-label {
-      position: fixed;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255,255,255,.25);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      font-family: 'Nunito', sans-serif;
-      white-space: nowrap;
-      z-index: 1;
-    }
-
-    /* ── Scale the fixed 402×874 shell to fit smaller desktop screens ── */
-    @media (max-height: 960px) {
-      #phone-shell { transform: scale(0.94); transform-origin: center center; }
-    }
-    @media (max-height: 880px) {
-      #phone-shell { transform: scale(0.86); transform-origin: center center; }
-    }
-    @media (max-height: 780px) {
-      #phone-shell { transform: scale(0.76); transform-origin: center center; }
-    }
-    @media (max-height: 680px) {
-      #phone-shell { transform: scale(0.66); transform-origin: center center; }
-    }
-
-    /* ── On actual phone: full-screen native feel ── */
-    @media (max-width: 440px) {
-      body {
-        background: #fff;
-        align-items: flex-start;
-        justify-content: flex-start;
-        overflow: hidden;
-        padding: 0;
-      }
-      #root { padding: 0; }
-      #phone-shell {
-        /* Override the fixed size with viewport fill */
-        width:      100vw  !important;
-        height:     100dvh !important;
-        min-width:  unset  !important;
-        min-height: unset  !important;
-        max-width:  unset  !important;
-        max-height: unset  !important;
-        border-radius: 0   !important;
-        box-shadow:  none  !important;
-        transform:   none  !important;
-      }
-      #phone-shell::before, #phone-shell::after { display: none; }
-      #app-inner {
-        padding-top:    env(safe-area-inset-top,    0px);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-      }
-      .desktop-bg, .orb, .phone-label { display: none; }
-    }
-
-    @keyframes pulse       { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.15);opacity:.35} }
-    @keyframes slideUp     { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
-    @keyframes slideDown   { from{transform:translateY(-10px);opacity:0} to{transform:translateY(0);opacity:1} }
-    @keyframes popIn       { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
-    @keyframes floatUp     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-    @keyframes shake       { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
-    @keyframes spin        { to{transform:rotate(360deg)} }
-    @keyframes heartLost   { 0%{transform:scale(1)} 50%{transform:scale(1.4)} 100%{transform:scale(1)} }
-
-    input::placeholder { color: rgba(255,255,255,.3) !important; }
-    input:-webkit-autofill {
-      -webkit-box-shadow: 0 0 0 100px rgba(255,255,255,.08) inset !important;
-      -webkit-text-fill-color: #fff !important;
-    }
-  </style>
+  input::placeholder { color: rgba(255,255,255,.3) !important; }
+  input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 100px rgba(255,255,255,.08) inset !important;
+    -webkit-text-fill-color: #fff !important;
+  }
+</style>
 </head>
 <body>
-  <!-- Desktop background -->
   <div class="desktop-bg"></div>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
 
-  <!-- Phone frame -->
   <div id="root">
     <div id="phone-shell">
       <div id="app-inner">
-        <!-- React mounts here -->
         <div id="react-root">
-          <!-- Shown while Babel compiles (136KB takes ~1-2s) -->
           <div id="loading-screen" style="
             position:absolute; inset:0;
             display:flex; flex-direction:column;
@@ -267,158 +249,157 @@
   <script type="text/babel" data-presets="react">
     const { useState, useEffect, useRef } = React;
 
-
 /* ═══════════════════════════════════════════════════════════════
-   AKHLAQVERSE — FULL INTERACTIVE PROTOTYPE
-   3 Dashboards: Siswa · Guru · Orang Tua
-   Every button is clickable with real state transitions
-═══════════════════════════════════════════════════════════════ */
+     AKHLAQVERSE — FULL INTERACTIVE PROTOTYPE
+     3 Dashboards: Siswa · Guru · Orang Tua
+     Every button is clickable with real state transitions
+  ═══════════════════════════════════════════════════════════════ */
 
-// ─── PALETTE ─────────────────────────────────────────────────
-const C = {
-  green:"#58cc02", greenDk:"#46a302", greenBg:"#e8fcd4",
-  blue:"#1cb0f6",  blueDk:"#0891d4",  blueBg:"#e0f5ff",
-  gold:"#ffc800",  goldDk:"#e6a800",  goldBg:"#fff8e0",
-  red:"#ff4b4b",   redDk:"#cc0000",   redBg:"#ffe5e5",
-  purple:"#ce82ff",purpleBg:"#f5eaff",
-  teal:"#00c8a0",  tealBg:"#e0faf5",
-  ink:"#1f1f1f",   ink2:"#4b4b4b",    muted:"#afafaf",
-  surface:"#f7f7f7", white:"#ffffff",
-  border:"#e8e8e8",
-};
+  // ─── PALETTE ─────────────────────────────────────────────────
+  const C = {
+    green:"#58cc02", greenDk:"#46a302", greenBg:"#e8fcd4",
+    blue:"#1cb0f6",  blueDk:"#0891d4",  blueBg:"#e0f5ff",
+    gold:"#ffc800",  goldDk:"#e6a800",  goldBg:"#fff8e0",
+    red:"#ff4b4b",   redDk:"#cc0000",   redBg:"#ffe5e5",
+    purple:"#ce82ff",purpleBg:"#f5eaff",
+    teal:"#00c8a0",  tealBg:"#e0faf5",
+    ink:"#1f1f1f",   ink2:"#4b4b4b",    muted:"#afafaf",
+    surface:"#f7f7f7", white:"#ffffff",
+    border:"#e8e8e8",
+  };
 
-// ─── QUIZ DATA ────────────────────────────────────────────────
-const QUIZZES = [
-  { id:1, unit:"Unit 1", icon:"💬", color:C.blue, title:"Cyberbullying",
-    bot:"Grup WhatsApp kelasmu ramai mengejek teman karena salah pakai seragam. Mereka kirim stiker merendahkan. Apa yang kamu lakukan?",
-    choices:[
-      {id:"A",text:"Ikut kirim stiker lucu biar dianggap kompak.",type:"bad"},
-      {id:"B",text:"Diam saja sebagai silent reader.",type:"mid"},
-      {id:"C",text:"Tegur sopan di grup, kirim DM ke korban untuk menguatkan.",type:"best"},
-    ], correct:"C", concept:"Muru'ah", points:20,
-    successHadith:"'Seorang muslim adalah seseorang yang muslim lainnya selamat dari lisan & tangannya.' (HR. Bukhari)",
-    failMsg:"Diam atau ikut-ikutan merusak ukhuwah Islamiyah.",
-  },
-  { id:2, unit:"Unit 2", icon:"📰", color:C.teal, title:"Anti-Hoaks",
-    bot:"Pesan berantai menyebar di grup keluarga: 'Jajanan sekolah X berbahaya!' Tidak ada sumber resmi. Tindakanmu?",
-    choices:[
-      {id:"A",text:"Langsung sebarkan agar dianggap peduli.",type:"bad"},
-      {id:"B",text:"Diamkan saja tanpa konfirmasi.",type:"mid"},
-      {id:"C",text:"Tahan, cek di sumber resmi, larang orang tua menyebarkan sebelum valid.",type:"best"},
-    ], correct:"C", concept:"Tabayyun", points:20,
-    successHadith:"QS. Al-Hujurat 49:6 — 'Jika datang kepadamu orang fasik membawa berita, periksalah dengan teliti...'",
-    failMsg:"Menyebar tanpa verifikasi berpotensi fitnah dan kepanikan massal.",
-  },
-  { id:3, unit:"Unit 3", icon:"🎮", color:C.purple, title:"Toxic Gaming",
-    bot:"Timmu kalah game karena satu teman error. Anggota lain memaki di chat. Bagaimana ketahanan adabmu?",
-    choices:[
-      {id:"A",text:"Ikut memaki untuk meluapkan kekesalan.",type:"bad"},
-      {id:"B",text:"Diam tapi dalam hati mengutuk.",type:"mid"},
-      {id:"C",text:"Mute pemain toxic, ketik semangat: 'Gapapa, next game lebih kompak!'",type:"best"},
-    ], correct:"C", concept:"Kadhmin al-Ghaizh", points:20,
-    successHadith:"'Orang kuat adalah yang mampu menahan dirinya saat marah.' (HR. Bukhari)",
-    failMsg:"Lisan kotor di ruang siber mencerminkan hati yang rapuh.",
-  },
-  { id:4, unit:"Unit 4", icon:"🔒", color:C.gold, title:"Privasi Digital",
-    bot:"Kamu tidak sengaja dapat screenshot aib teman. Sahabatmu memaksa minta: 'Cuma mau tahu!' Tindakanmu?",
-    choices:[
-      {id:"A",text:"Kasih dengan syarat 'jangan disebar lagi'.",type:"bad"},
-      {id:"B",text:"Hapus screenshot tapi ceritakan garis besarnya.",type:"mid"},
-      {id:"C",text:"Tolak, hapus file, ingatkan temanmu tentang larangan ghibah digital.",type:"best"},
-    ], correct:"C", concept:"Hifzhul Aurat", points:20,
-    successHadith:"'Barangsiapa menutupi aib seorang muslim, Allah tutupi aibnya di dunia & akhirat.' (HR. Muslim)",
-    failMsg:"Aib digital meninggalkan jejak abadi. Kamu membuka pintu Ghibah Digital.",
-  },
-  { id:5, unit:"Unit 5", icon:"🎯", color:C.green, title:"Peer Pressure",
-    bot:"Gengmu bikin TikTok challenge berbahaya. Mereka tag akunmu: 'Kalau gak ikut, keluar grup!' Responsmu?",
-    choices:[
-      {id:"A",text:"Ikut buat video demi jaga eksistensi.",type:"bad"},
-      {id:"B",text:"Buat tapi set privat untuk geng saja.",type:"mid"},
-      {id:"C",text:"Tolak tegas & sopan — pertemanan bukan soal kepatuhan buta.",type:"best"},
-    ], correct:"C", concept:"Izzah", points:20,
-    successHadith:"Tidak ada ketaatan kepada makhluk dalam kemaksiatan kepada Allah. Kamu merdeka secara spiritual!",
-    failMsg:"Mengorbankan akhlak demi pengakuan semu adalah kerapatan mental (Inshiyad).",
-  },
-];
+  // ─── QUIZ DATA ────────────────────────────────────────────────
+  const QUIZZES = [
+    { id:1, unit:"Unit 1", icon:"💬", color:C.blue, title:"Cyberbullying",
+      bot:"Grup WhatsApp kelasmu ramai mengejek teman karena salah pakai seragam. Mereka kirim stiker merendahkan. Apa yang kamu lakukan?",
+      choices:[
+        {id:"A",text:"Ikut kirim stiker lucu biar dianggap kompak.",type:"bad"},
+        {id:"B",text:"Diam saja sebagai silent reader.",type:"mid"},
+        {id:"C",text:"Tegur sopan di grup, kirim DM ke korban untuk menguatkan.",type:"best"},
+      ], correct:"C", concept:"Muru'ah", points:20,
+      successHadith:"'Seorang muslim adalah seseorang yang muslim lainnya selamat dari lisan & tangannya.' (HR. Bukhari)",
+      failMsg:"Diam atau ikut-ikutan merusak ukhuwah Islamiyah.",
+    },
+    { id:2, unit:"Unit 2", icon:"📰", color:C.teal, title:"Anti-Hoaks",
+      bot:"Pesan berantai menyebar di grup keluarga: 'Jajanan sekolah X berbahaya!' Tidak ada sumber resmi. Tindakanmu?",
+      choices:[
+        {id:"A",text:"Langsung sebarkan agar dianggap peduli.",type:"bad"},
+        {id:"B",text:"Diamkan saja tanpa konfirmasi.",type:"mid"},
+        {id:"C",text:"Tahan, cek di sumber resmi, larang orang tahu menyebarkan sebelum valid.",type:"best"},
+      ], correct:"C", concept:"Tabayyun", points:20,
+      successHadith:"QS. Al-Hujurat 49:6 — 'Jika datang kepadamu orang fasik membawa berita, periksalah dengan teliti...'",
+      failMsg:"Menyebar tanpa verifikasi berpotensi fitnah dan kepanikan massal.",
+    },
+    { id:3, unit:"Unit 3", icon:"🎮", color:C.purple, title:"Toxic Gaming",
+      bot:"Timmu kalah game karena satu teman error. Anggota lain memaki di chat. Bagaimana ketahanan adabmu?",
+      choices:[
+        {id:"A",text:"Ikut memaki untuk meluapkan kekesalan.",type:"bad"},
+        {id:"B",text:"Diam tapi dalam hati mengutuk.",type:"mid"},
+        {id:"C",text:"Mute pemain toxic, ketik semangat: 'Gapapa, next game lebih kompak!'",type:"best"},
+      ], correct:"C", concept:"Kadhmin al-Ghaizh", points:20,
+      successHadith:"'Orang kuat adalah yang mampu menahan dirinya saat marah.' (HR. Bukhari)",
+      failMsg:"Lisan kotor di ruang siber mencerminkan hati yang rapuh.",
+    },
+    { id:4, unit:"Unit 4", icon:"🔒", color:C.gold, title:"Privasi Digital",
+      bot:"Kamu tidak sengaja dapat screenshot aib teman. Sahabatmu memaksa minta: 'Cuma mau tahu!' Tindakanmu?",
+      choices:[
+        {id:"A",text:"Kasih dengan syarat 'jangan disebar lagi'.",type:"bad"},
+        {id:"B",text:"Hapus screenshot tapi ceritakan garis besarnya.",type:"mid"},
+        {id:"C",text:"Tolak, hapus file, ingatkan temanmu tentang larangan ghibah digital.",type:"best"},
+      ], correct:"C", concept:"Hifzhul Aurat", points:20,
+      successHadith:"'Barangsiapa menutupi aib seorang muslim, Allah tutupi aibnya di dunia & akhirat.' (HR. Muslim)",
+      failMsg:"Aib digital meninggalkan jejak abadi. Kamu membuka pintu Ghibah Digital.",
+    },
+    { id:5, unit:"Unit 5", icon:"🎯", color:C.green, title:"Peer Pressure",
+      bot:"Gengmu bikin TikTok challenge berbahaya. Mereka tag akunmu: 'Kalau gak ikut, keluar grup!' Responsmu?",
+      choices:[
+        {id:"A",text:"Ikut buat video demi jaga eksistensi.",type:"bad"},
+        {id:"B",text:"Buat tapi set privat untuk geng saja.",type:"mid"},
+        {id:"C",text:"Tolak tegas & sopan — pertemanan bukan soal kepatuhan buta.",type:"best"},
+      ], correct:"C", concept:"Izzah", points:20,
+      successHadith:"Tidak ada ketaatan kepada makhluk dalam kemaksiatan kepada Allah. Kamu merdeka secara spiritual!",
+      failMsg:"Mengorbankan akhlak demi pengakuan semu adalah kerapatan mental (Inshiyad).",
+    },
+  ];
 
-// ─── MOCK DATA ────────────────────────────────────────────────
-const STUDENTS = [
-  {id:1,name:"Fatimah Az-Zahra",grade:"8A",gems:340,streak:12,hearts:5,doneUnits:3,alert:false,
-    journal:"Hari ini saya menemukan teman yang sedang bersedih...",
-    emotion:[4,3,4,5,4,5,4],selfCtrl:[3,4,4,5,4,4,5],integrity:[5,5,4,5,5,4,5]},
-  {id:2,name:"Ahmad Fauzi",grade:"8A",gems:180,streak:5,hearts:3,doneUnits:2,alert:false,
-    journal:"Saya belajar bahwa menyebarkan berita harus diverifikasi dulu...",
-    emotion:[3,3,4,3,3,4,3],selfCtrl:[4,3,3,4,4,3,4],integrity:[3,4,4,3,4,4,3]},
-  {id:3,name:"Siti Maryam",grade:"8B",gems:60,streak:2,hearts:1,doneUnits:1,alert:true,
-    journal:"",
-    emotion:[2,1,2,1,2,1,2],selfCtrl:[2,2,1,2,1,2,2],integrity:[2,2,2,1,2,2,1]},
-  {id:4,name:"Rizky Ramadhan",grade:"8B",gems:420,streak:18,hearts:5,doneUnits:5,alert:false,
-    journal:"Prinsip Izzah membantu saya menolak ajakan negatif teman...",
-    emotion:[5,4,5,5,4,5,5],selfCtrl:[5,5,5,4,5,5,5],integrity:[5,5,5,5,4,5,5]},
-];
+  // ─── MOCK DATA ────────────────────────────────────────────────
+  const STUDENTS = [
+    {id:1,name:"Muhammad Gilang Syabani",grade:"8A",gems:340,streak:12,hearts:5,doneUnits:3,alert:false,
+      journal:"Hari ini saya menemukan teman yang sedang bersedih...",
+      emotion:[4,3,4,5,4,5,4],selfCtrl:[3,4,4,5,4,4,5],integrity:[5,5,4,5,5,4,5]},
+    {id:2,name:"Alfath Syabana",grade:"8A",gems:180,streak:5,hearts:3,doneUnits:2,alert:false,
+      journal:"Saya belajar bahwa menyebarkan berita harus diverifikasi dulu...",
+      emotion:[3,3,4,3,3,4,3],selfCtrl:[4,3,3,4,4,3,4],integrity:[3,4,4,3,4,4,3]},
+    {id:3,name:"Hudzaif",grade:"8B",gems:60,streak:2,hearts:1,doneUnits:1,alert:true,
+      journal:"",
+      emotion:[2,1,2,1,2,1,2],selfCtrl:[2,2,1,2,1,2,2],integrity:[2,2,2,1,2,2,1]},
+    {id:4,name:"Shofal Maziyah",grade:"8B",gems:420,streak:18,hearts:5,doneUnits:5,alert:false,
+      journal:"Prinsip Izzah membantu saya menolak ajakan negatif teman...",
+      emotion:[5,4,5,5,4,5,5],selfCtrl:[5,5,5,4,5,5,5],integrity:[5,5,5,5,4,5,5]},
+  ];
 
-const MISSIONS = [
-  {id:1,student:"Fatimah Az-Zahra",unit:"Unit 1 – Muru'ah",desc:"Apakah anak membela teman yang terpojok minggu ini?",status:"pending",date:"08 Jun"},
-  {id:2,student:"Ahmad Fauzi",unit:"Unit 2 – Tabayyun",desc:"Apakah anak mengonfirmasi kebenaran kabar sebelum percaya?",status:"pending",date:"07 Jun"},
-  {id:3,student:"Rizky Ramadhan",unit:"Unit 5 – Izzah",desc:"Apakah anak berani berkata 'tidak' pada ajakan negatif?",status:"approved",date:"06 Jun"},
-];
+  const MISSIONS = [
+    {id:1,student:"Muhammad Gilang Syabani",unit:"Unit 1 – Muru'ah",desc:"Apakah anak membela teman yang terpojok minggu ini?",status:"pending",date:"08 Jun"},
+    {id:2,student:"Husna",unit:"Unit 2 – Tabayyun",desc:"Apakah anak mengonfirmasi kebenaran kabar sebelum percaya?",status:"pending",date:"07 Jun"},
+    {id:3,student:"Hudzaif",unit:"Unit 5 – Izzah",desc:"Apakah anak berani berkata 'tidak' pada ajakan negatif?",status:"approved",date:"06 Jun"},
+  ];
 
-// ─── MINI SPARKLINE ───────────────────────────────────────────
-const Spark = ({data,color,h=32,w=80})=>{
-  const max=Math.max(...data),min=Math.min(...data);
-  const pts=data.map((v,i)=>{
-    const x=(i/(data.length-1))*w;
-    const y=h-((v-min)/(max-min||1))*(h-4)-2;
-    return `${x},${y}`;
-  }).join(" ");
-  return(
-    <svg width={w} height={h}>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      {data.map((v,i)=>{
-        const x=(i/(data.length-1))*w;
-        const y=h-((v-min)/(max-min||1))*(h-4)-2;
-        return <circle key={i} cx={x} cy={y} r="2.5" fill={color}/>;
-      })}
-    </svg>
-  );
-};
+  // ─── MINI SPARKLINE ───────────────────────────────────────────
+  const Spark = ({data,color,h=32,w=80})=>{
+    const max=Math.max(...data),min=Math.min(...data);
+    const pts=data.map((v,i)=>{
+      const x=(i/(data.length-1))*w;
+      const y=h-((v-min)/(max-min||1))*(h-4)-2;
+      return `${x},${y}`;
+    }).join(" ");
+    return(
+      <svg width={w} height={h}>
+        <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        {data.map((v,i)=>{
+          const x=(i/(data.length-1))*w;
+          const y=h-((v-min)/(max-min||1))*(h-4)-2;
+          return <circle key={i} cx={x} cy={y} r="2.5" fill={color}/>;
+        })}
+      </svg>
+    );
+  };
 
-// ─── BAR CHART ────────────────────────────────────────────────
-const MiniBar=({value,max=5,color})=>(
-  <div style={{display:"flex",alignItems:"center",gap:6}}>
-    <div style={{flex:1,height:8,background:C.border,borderRadius:4,overflow:"hidden"}}>
-      <div style={{width:`${(value/max)*100}%`,height:"100%",background:color,borderRadius:4,transition:"width .5s ease"}}/>
-    </div>
-    <span style={{fontSize:12,fontWeight:800,color,fontFamily:"'Nunito',sans-serif",minWidth:16}}>{value}</span>
-  </div>
-);
-
-// ─── MODAL WRAPPER ────────────────────────────────────────────
-const Modal=({open,onClose,title,children,color=C.blue})=>{
-  if(!open)return null;
-  return(
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:"24px 24px 0 0",width:"100%",maxWidth:420,maxHeight:"85vh",overflow:"hidden",display:"flex",flexDirection:"column",animation:"slideUp .3s ease"}}>
-        <div style={{background:`linear-gradient(135deg,${color},${color}cc)`,padding:"18px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontWeight:900,fontSize:17,color:"#fff",fontFamily:"'Nunito',sans-serif"}}>{title}</span>
-          <button onClick={onClose} style={{background:"rgba(255,255,255,.25)",border:"none",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:16,color:"#fff",fontWeight:900}}>✕</button>
-        </div>
-        <div style={{overflowY:"auto",padding:"18px 20px",flex:1}}>{children}</div>
+  // ─── BAR CHART ────────────────────────────────────────────────
+  const MiniBar=({value,max=5,color})=>(
+    <div style={{display:"flex",alignItems:"center",gap:6}}>
+      <div style={{flex:1,height:8,background:C.border,borderRadius:4,overflow:"hidden"}}>
+        <div style={{width:`${(value/max)*100}%`,height:"100%",background:color,borderRadius:4,transition:"width .5s ease"}}/>
       </div>
+      <span style={{fontSize:12,fontWeight:800,color,fontFamily:"'Nunito',sans-serif",minWidth:16}}>{value}</span>
     </div>
   );
-};
 
-// ─── TOAST ────────────────────────────────────────────────────
-const Toast=({msg,show})=>(
-  <div style={{position:"fixed",top:24,left:"50%",transform:`translateX(-50%) translateY(${show?0:-80}px)`,
-    transition:"transform .35s ease",zIndex:1200,background:C.ink,color:"#fff",
-    padding:"10px 22px",borderRadius:20,fontWeight:800,fontSize:14,
-    fontFamily:"'Nunito',sans-serif",whiteSpace:"nowrap",boxShadow:"0 6px 20px rgba(0,0,0,.3)"}}>
-    {msg}
-  </div>
-);
+  // ─── MODAL WRAPPER ────────────────────────────────────────────
+  const Modal=({open,onClose,title,children,color=C.blue})=>{
+    if(!open)return null;
+    return(
+      <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:"24px 24px 0 0",width:"100%",maxWidth:420,maxHeight:"85vh",overflow:"hidden",display:"flex",flexDirection:"column",animation:"slideUp .3s ease"}}>
+          <div style={{background:`linear-gradient(135deg,${color},${color}cc)`,padding:"18px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontWeight:900,fontSize:17,color:"#fff",fontFamily:"'Nunito',sans-serif"}}>{title}</span>
+            <button onClick={onClose} style={{background:"rgba(255,255,255,.25)",border:"none",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:16,color:"#fff",fontWeight:900}}>✕</button>
+          </div>
+          <div style={{overflowY:"auto",padding:"18px 20px",flex:1}}>{children}</div>
+        </div>
+      </div>
+    );
+  };
 
+  // ─── TOAST ────────────────────────────────────────────────────
+  const Toast=({msg,show})=>(
+    <div style={{position:"fixed",top:24,left:"50%",transform:`translateX(-50%) translateY(${show?0:-80}px)`,
+      transition:"transform .35s ease",zIndex:1200,background:C.ink,color:"#fff",
+      padding:"10px 22px",borderRadius:20,fontWeight:800,fontSize:14,
+      fontFamily:"'Nunito',sans-serif",whiteSpace:"nowrap",boxShadow:"0 6px 20px rgba(0,0,0,.3)"}}>
+      {msg}
+    </div>
+  );
+    
 /* ══════════════════════════════════════════════════════════════
    STUDENT DASHBOARD
 ══════════════════════════════════════════════════════════════ */
