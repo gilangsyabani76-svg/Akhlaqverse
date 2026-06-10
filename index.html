@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>AKHLAQVERSE — Platform Akhlak Digital</title>
+
+  <!-- React 18 & ReactDOM 18 (Produksi) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --primary: #58cc02; --primary-dark: #46a302;
+      --blue: #1cb0f6; --blue-dark: #0891d4;
+      --gold: #ffc800; --red: #ff4b4b;
+      --bg-dark: #0f172a;
+      --glass: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; overflow: hidden;
+    }
+
+    /* 📱 IPHONE MOCKUP FRAME */
+    #phone-shell {
+      width: 390px; height: 844px;
+      background: #fff; border-radius: 55px;
+      position: relative; 
+      overflow: hidden; /* MENGUNCI KONTEN AGAR TIDAK BOCOR KE LENGKUNGAN HP */
+      box-shadow: 0 0 0 12px #1a1a1a, 0 0 0 15px #333, 0 40px 100px rgba(0,0,0,0.6);
+      display: flex; flex-direction: column;
+    }
+
+    /* Notch iPhone */
+    #phone-shell::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 160px; height: 34px; background: #1a1a1a; 
+      border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+      z-index: 1000;
+    }
+
+    /* CONTAINER UTAMA APLIKASI */
+    #app-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* AREA SCROLL KONTEN INTERNAL */
+    .screen-content {
+      flex: 1;
+      overflow-y: auto;
+      padding-top: 45px; /* Menghindari notch */
+      display: flex;
+      flex-direction: column;
+    }
+    .screen-content::-webkit-scrollbar { display: none; }
+
+    /* ANIMASI */
+    @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+    .btn-3d {
+      position: relative; border: none; border-radius: 18px; font-weight: 800; cursor: pointer;
+      transition: all 0.1s; transform: translateY(0);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-3d:active { transform: translateY(4px); }
+
+    .soft-shadow { box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08); }
+
+    @media (max-height: 850px) { #phone-shell { transform: scale(0.9); } }
+    @media (max-height: 750px) { #phone-shell { transform: scale(0.8); } }
+    @media (max-width: 450px) {
+      #phone-shell { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; transform: scale(1); }
+      #phone-shell::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="phone-shell">
+    <div id="root"></div>
+  </div>
+
+  <script>
+    const e = React.createElement;
+    const { useState, useEffect } = React;
+
+    // --- DATA ---
+    const QUIZ_LIST = [
+      {
+        id: 1, title: "Cyberbullying", icon: "💬", concept: "Muru'ah",
+        question: "Temanmu mengirim stiker mengejek di grup WA kelas. Apa tindakan beradabmu?",
+        options: [
+          { id: 'A', text: "Ikut tertawa agar dianggap asik" },
+          { id: 'B', text: "Diam saja tapi merasa tidak enak" },
+          { id: 'C', text: "Menegur sopan & menguatkan korban" }
+        ],
+        correct: 'C',
+        wisdom: "'Seorang muslim adalah yang orang lain selamat dari lisan & tangannya.' (HR. Bukhari)"
+      }
+    ];
+
+    // --- SCREEN 1: WELCOME SCREEN ---
+    function WelcomeScreen({ onStart }) {
+      return e('div', { 
+        style: { 
+          flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)', padding: '40px', textAlign: 'center'
+        }
+      },
+        e('div', { style: { animation: 'float 3s ease-in-out infinite', fontSize: '100px', marginBottom: '20px' }}, '🕌'),
+        e('h1', { style: { color: '#fff', fontSize: '36px', fontWeight: '900', letterSpacing: '2px', marginBottom: '10px' }}, 'AKHLAQVERSE'),
+        e('p', { style: { color: '#94a3b8', fontSize: '16px', marginBottom: '60px', lineHeight: '1.6' }}, 'Platform Pendidikan Akhlak Digital Berbasis Adab & Karakter'),
+        e('button', {
+          onClick: onStart,
+          className: 'btn-3d',
+          style: { 
+            background: 'var(--primary)', color: '#fff', padding: '20px 40px', fontSize: '18px',
+            boxShadow: '0 6px 0 var(--primary-dark)', width: '100%'
+          }
+        }, 'Mulai Belajar 🚀')
+      );
+    }
+
+    // --- SCREEN 2: LOGIN / ROLE SELECTION ---
+    function RoleSelection({ onLogin }) {
+      const [activeRole, setActiveRole] = useState('siswa');
+      const roles = [
+        { id: 'siswa', label: 'Siswa', icon: '🎒', color: 'var(--primary)' },
+        { id: 'guru', label: 'Guru', icon: 'var(--blue)', color: 'var(--blue)' },
+        { id: 'ortu', label: 'Ortu', icon: '👪', color: 'var(--gold)' }
+      ];
+
+      return e('div', { className: 'screen-content', style: { padding: '25px', background: '#f8fafc' }},
+        e('h2', { style: { fontWeight: '900', fontSize: '28px', color: '#1e293b', marginTop: '30px', marginBottom: '10px' }}, 'Selamat Datang'),
+        e('p', { style: { color: '#64748b', marginBottom: '35px', fontWeight: '600' }}, 'Masuk untuk akses fitur pendidikan adab'),
+        
+        // Segmented Control
+        e('div', { style: { 
+          background: '#e2e8f0', borderRadius: '22px', padding: '6px', display: 'flex', marginBottom: '35px',
+          position: 'relative', height: '64px'
+        }},
+          roles.map(r => e('button', {
+            key: r.id,
+            onClick: () => setActiveRole(r.id),
+            style: {
+              flex: 1, border: 'none', background: 'transparent', zIndex: 2, cursor: 'pointer',
+              fontWeight: '800', color: activeRole === r.id ? '#fff' : '#64748b', transition: '0.3s',
+              fontSize: '14px'
+            }
+          }, r.label)),
+          // Sliding Indicator
+          e('div', { style: {
+            position: 'absolute', top: '6px', bottom: '6px', borderRadius: '18px',
+            width: 'calc(33.33% - 8px)', transition: '0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            background: roles.find(r => r.id === activeRole).color,
+            left: activeRole === 'siswa' ? '6px' : activeRole === 'guru' ? '33.33%' : '66.66%',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }})
+        ),
+
+        e('div', { style: { display: 'flex', flexDirection: 'column', gap: '15px' }},
+          e('input', { placeholder: 'Email Sekolah', style: { padding: '18px', borderRadius: '16px', border: '2px solid #e2e8f0', outline: 'none', fontSize: '15px' }}),
+          e('input', { type: 'password', placeholder: 'Kata Sandi', style: { padding: '18px', borderRadius: '16px', border: '2px solid #e2e8f0', outline: 'none', fontSize: '15px' }}),
+          e('button', {
+            onClick: () => onLogin(activeRole),
+            className: 'btn-3d',
+            style: { 
+              marginTop: '10px', background: roles.find(r => r.id === activeRole).color, color: '#fff',
+              padding: '18px', fontSize: '16px', boxShadow: `0 6px 0 rgba(0,0,0,0.1)`
+            }
+          }, `Masuk sebagai ${activeRole.toUpperCase()}`)
+        )
+      );
+    }
+
+    // --- SCREEN 3: QUIZ SYSTEM ---
+    function QuizScreen({ onBack }) {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [hearts, setHearts] = useState(5);
+      const [wrongId, setWrongId] = useState(null);
+      const [isCorrect, setIsCorrect] = useState(false);
+      const [timer, setTimer] = useState(300);
+      const [isLocked, setIsLocked] = useState(false);
+
+      const quiz = QUIZ_LIST[currentIndex];
+
+      useEffect(() => {
+        let interval;
+        if (hearts === 0) {
+          setIsLocked(true);
+          interval = setInterval(() => {
+            setTimer(t => {
+              if (t <= 1) {
+                setHearts(5);
+                setIsLocked(false);
+                return 300;
+              }
+              return t - 1;
+            });
+          }, 1000);
+        }
+        return () => clearInterval(interval);
+      }, [hearts]);
+
+      const formatTime = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2, '0')}`;
+
+      if (isLocked) {
+        return e('div', { style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', textAlign: 'center', animation: 'slideIn 0.3s ease' }},
+          e('div', { style: { fontSize: '80px', marginBottom: '20px' }}, '💔'),
+          e('h2', { style: { fontWeight: '900', fontSize: '28px' }}, 'Nyawa Habis!'),
+          e('p', { style: { color: '#64748b', marginTop: '10px', marginBottom: '30px' }}, 'Jangan menyerah. Nyawa akan terisi kembali dalam:'),
+          e('div', { style: { fontSize: '40px', fontWeight: '900', color: 'var(--red)', background: '#fff1f1', padding: '20px 40px', borderRadius: '25px', border: '3px solid var(--red)' }}, formatTime(timer)),
+          e('button', { onClick: onBack, style: { marginTop: '50px', background: 'none', border: 'none', color: '#64748b', fontWeight: '800', cursor: 'pointer', textDecoration: 'underline' }}, 'Kembali ke Menu Utama')
+        );
+      }
+
+      return e('div', { className: 'screen-content', style: { background: '#fff' }},
+        // Header
+        e('div', { style: { padding: '15px 25px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #f1f5f9' }},
+          e('button', { onClick: onBack, style: { background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}, '✕'),
+          e('div', { style: { display: 'flex', gap: '6px' }},
+            [...Array(5)].map((_, i) => e('span', { key: i, style: { fontSize: '22px', opacity: i < hearts ? 1 : 0.2 }}, '❤️'))
+          )
+        ),
+
+        // Question area
+        e('div', { style: { padding: '30px 25px', flex: 1 }},
+          e('div', { style: { background: '#f0f9ff', color: '#0369a1', padding: '8px 16px', borderRadius: '12px', display: 'inline-block', fontSize: '13px', fontWeight: '800', marginBottom: '20px' }}, `UNIT ${quiz.id}: ${quiz.concept.toUpperCase()}`),
+          e('h3', { style: { fontSize: '22px', fontWeight: '800', color: '#1e293b', lineHeight: '1.5', marginBottom: '35px' }}, quiz.question),
+
+          // Options logic
+          e('div', { style: { display: 'flex', flexDirection: 'column', gap: '15px' }},
+            quiz.options.map(opt => {
+              const isWrong = wrongId === opt.id;
+              const isRight = isCorrect && opt.id === quiz.correct;
+
+              return e('button', {
+                key: opt.id,
+                onClick: () => {
+                  if (isCorrect || isWrong) return;
+                  if (opt.id === quiz.correct) setIsCorrect(true);
+                  else {
+                    setWrongId(opt.id);
+                    setHearts(h => h - 1);
+                    setTimeout(() => setWrongId(null), 1000);
+                  }
+                },
+                className: 'btn-3d',
+                style: {
+                  textAlign: 'left', padding: '20px', borderRadius: '20px', 
+                  border: `2px solid ${isRight ? 'var(--primary)' : isWrong ? 'var(--red)' : '#e2e8f0'}`,
+                  background: isRight ? '#f0fff4' : isWrong ? '#fff1f1' : '#fff',
+                  boxShadow: `0 4px 0 ${isRight ? 'var(--primary-dark)' : isWrong ? '#faa' : '#e2e8f0'}`,
+                  justifyContent: 'flex-start',
+                  animation: isWrong ? 'shake 0.3s ease' : 'none'
+                }
+              },
+                e('div', { style: { 
+                  width: '32px', height: '32px', borderRadius: '10px', marginRight: '15px',
+                  background: isRight ? 'var(--primary)' : isWrong ? 'var(--red)' : '#f1f5f9',
+                  color: (isRight || isWrong) ? '#fff' : '#64748b',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900'
+                }}, opt.id),
+                e('span', { style: { fontWeight: '700', fontSize: '15px', color: '#334155' }}, opt.text)
+              );
+            })
+          )
+        ),
+
+        // Feedback Banner
+        isCorrect && e('div', {
+          style: {
+            background: '#dcfce7', padding: '35px 25px', borderRadius: '30px 30px 0 0',
+            boxShadow: '0 -10px 40px rgba(0,0,0,0.05)', animation: 'slideIn 0.3s ease-out'
+          }
+        },
+          e('h4', { style: { color: '#166534', fontWeight: '900', fontSize: '20px', marginBottom: '8px' }}, 'Masya Allah! Benar ✨'),
+          e('p', { style: { fontSize: '14px', color: '#166534', marginBottom: '25px', lineHeight: '1.6', fontWeight: '600' }}, quiz.wisdom),
+          e('button', {
+            onClick: onBack,
+            className: 'btn-3d',
+            style: { width: '100%', background: 'var(--primary)', color: '#fff', padding: '18px', boxShadow: '0 6px 0 var(--primary-dark)', fontSize: '16px' }
+          }, 'Selesaikan Unit')
+        )
+      );
+    }
+
+    // --- MAIN APP CONTROLLER (THE ROUTER) ---
+    function App() {
+      // STATE UTAMA UNTUK ROUTING
+      const [screen, setScreen] = useState('welcome'); // welcome | login | quiz
+
+      // FUNGSI NAVIGASI
+      const goToLogin = () => setScreen('login');
+      const goToQuiz = () => setScreen('quiz');
+      const goToWelcome = () => setScreen('welcome');
+
+      // PENGONDISIAN KETAT (HANYA SATU HALAMAN YANG BOLEH RENDER)
+      return e('div', { id: 'app-container' },
+        (function() {
+          switch(screen) {
+            case 'welcome':
+              return e(WelcomeScreen, { onStart: goToLogin });
+            case 'login':
+              return e(RoleSelection, { onLogin: goToQuiz });
+            case 'quiz':
+              return e(QuizScreen, { onBack: goToWelcome });
+            default:
+              return e(WelcomeScreen, { onStart: goToLogin });
+          }
+        })()
+      );
+    }
+
+    // --- MOUNTING ---
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(e(App));
+  </script>
+</body>
+</html>
