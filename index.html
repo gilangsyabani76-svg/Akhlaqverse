@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>AKHLAQVERSE — Platform Akhlak Digital</title>
+
+  <!-- React 18 & ReactDOM 18 (Produksi) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Nunito:wght@700;900&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --primary: #58cc02; --primary-dark: #46a302;
+      --blue: #1cb0f6; --blue-dark: #0891d4;
+      --gold: #ffc800; --red: #ff4b4b;
+      --ink: #1f1f1f; --muted: #afafaf;
+      --bg-dark: #0f172a;
+      --glass: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.2);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg-dark);
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; overflow: hidden;
+    }
+
+    /* 📱 IPHONE SHELL - FIXED & ANTI BOCOR */
+    #phone-shell {
+      width: 390px; height: 844px;
+      background: #fff; border-radius: 50px;
+      position: relative; overflow: hidden; /* Mengunci konten agar tidak bocor keluar lengkungan */
+      box-shadow: 0 0 0 12px #1a1a1a, 0 0 0 15px #333, 0 30px 100px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column;
+    }
+
+    /* Notch */
+    #phone-shell::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 150px; height: 35px; background: #1a1a1a; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+      z-index: 1000;
+    }
+
+    #app-container {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      position: relative;
+    }
+
+    .scroll-area {
+      flex: 1; overflow-y: auto; padding-top: 40px; padding-bottom: 30px;
+      scrollbar-width: none;
+    }
+    .scroll-area::-webkit-scrollbar { display: none; }
+
+    /* ANIMATIONS */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(88, 204, 2, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(88, 204, 2, 0); } 100% { box-shadow: 0 0 0 0 rgba(88, 204, 2, 0); } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    /* CUSTOM UI COMPONENTS */
+    .btn-3d {
+      position: relative; border: none; border-radius: 16px; font-weight: 800; cursor: pointer;
+      transition: all 0.1s; transform: translateY(0);
+    }
+    .btn-3d:active { transform: translateY(4px); }
+
+    .soft-shadow { box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); }
+    .glow-green { box-shadow: 0 4px 20px rgba(88, 204, 2, 0.3); }
+
+    /* RESPONSIVE SCALE FOR DESKTOP */
+    @media (max-height: 900px) { #phone-shell { transform: scale(0.9); } }
+    @media (max-height: 800px) { #phone-shell { transform: scale(0.8); } }
+    @media (max-width: 450px) {
+      body { background: #fff; }
+      #phone-shell { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; transform: scale(1); }
+      #phone-shell::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="phone-shell">
+    <div id="root"></div>
+  </div>
+
+  <script>
+    const e = React.createElement;
+    const { useState, useEffect, useRef } = React;
+
+    // --- DATA KUIS ---
+    const QUIZ_DATA = [
+      {
+        id: 1, title: "Cyberbullying", icon: "💬", concept: "Muru'ah",
+        question: "Temanmu mengirim stiker mengejek di grup WA kelas. Apa tindakan beradabmu?",
+        options: [
+          { id: 'A', text: "Ikut tertawa agar dianggap asik" },
+          { id: 'B', text: "Diam saja tapi merasa tidak enak" },
+          { id: 'C', text: "Menegur sopan & menguatkan korban" }
+        ],
+        correct: 'C',
+        wisdom: "'Seorang muslim adalah yang orang lain selamat dari lisan & tangannya.' (HR. Bukhari)"
+      },
+      {
+        id: 2, title: "Tabayyun", icon: "📱", concept: "Anti-Hoaks",
+        question: "Dapat info 'Kantun sekolah beracun' di grup keluarga tanpa sumber. Kamu?",
+        options: [
+          { id: 'A', text: "Share ke teman dekat segera" },
+          { id: 'B', text: "Verifikasi sumber berita dulu" },
+          { id: 'C', text: "Langsung percaya saja" }
+        ],
+        correct: 'B',
+        wisdom: "QS. Al-Hujurat: 6 mengajarkan kita untuk meneliti berita dari orang fasik."
+      }
+    ];
+
+    // --- COMPONENTS ---
+
+    function WelcomeScreen({ onNext }) {
+      return e('div', { 
+        style: { 
+          flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)', padding: '40px', textAlign: 'center'
+        }
+      },
+        e('div', { style: { animation: 'float 3s ease-in-out infinite', fontSize: '80px', marginBottom: '20px' }}, '🕌'),
+        e('h1', { style: { color: '#fff', fontSize: '32px', fontWeight: '900', letterSpacing: '2px', marginBottom: '10px' }}, 'AKHLAQVERSE'),
+        e('p', { style: { color: '#94a3b8', fontSize: '16px', marginBottom: '50px', lineHeight: '1.6' }}, 'Platform Pendidikan Akhlak Digital Berbasis Adab & Karakter'),
+        e('button', {
+          onClick: onNext,
+          className: 'btn-3d glow-green',
+          style: { 
+            background: 'var(--primary)', color: '#fff', padding: '18px 40px', fontSize: '18px',
+            boxShadow: '0 6px 0 var(--primary-dark)', width: '100%'
+          }
+        }, 'Mulai Belajar 🚀')
+      );
+    }
+
+    function RoleSelection({ onSelect }) {
+      const [active, setActive] = useState('siswa');
+      const roles = [
+        { id: 'siswa', label: 'Siswa', icon: '🎒', color: 'var(--primary)' },
+        { id: 'guru', label: 'Guru', icon: '👨‍🏫', color: 'var(--blue)' },
+        { id: 'ortu', label: 'Orang Tua', icon: '👪', color: 'var(--gold)' }
+      ];
+
+      return e('div', { className: 'scroll-area', style: { padding: '20px' }},
+        e('h2', { style: { fontWeight: '800', fontSize: '24px', marginBottom: '25px', textAlign: 'center' }}, 'Pilih Peran Anda'),
+        
+        // Segmented Control (Kapsul)
+        e('div', { style: { 
+          background: '#f1f5f9', borderRadius: '20px', padding: '5px', display: 'flex', marginBottom: '30px',
+          position: 'relative', height: '60px'
+        }},
+          roles.map(role => e('button', {
+            key: role.id,
+            onClick: () => setActive(role.id),
+            style: {
+              flex: 1, border: 'none', background: 'transparent', zIndex: 2, cursor: 'pointer',
+              fontWeight: '700', color: active === role.id ? '#fff' : '#64748b', transition: '0.3s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'
+            }
+          }, e('span', {}, role.icon), role.label)),
+          // Indicator Background
+          e('div', { style: {
+            position: 'absolute', top: '5px', bottom: '5px', borderRadius: '15px',
+            width: 'calc(33.33% - 6.66px)', transition: '0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            background: roles.find(r => r.id === active).color,
+            left: active === 'siswa' ? '5px' : active === 'guru' ? '33.33%' : '66.66%',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+          }})
+        ),
+
+        // Login Card
+        e('div', { style: { 
+          padding: '30px 20px', borderRadius: '24px', background: '#fff', border: '1px solid #e2e8f0',
+          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.05)'
+        }},
+          e('input', { placeholder: 'Email / Username', style: { width: '100%', padding: '15px', borderRadius: '12px', border: '2px solid #f1f5f9', marginBottom: '15px', outline: 'none' }}),
+          e('input', { type: 'password', placeholder: 'Password', style: { width: '100%', padding: '15px', borderRadius: '12px', border: '2px solid #f1f5f9', marginBottom: '25px', outline: 'none' }}),
+          e('button', {
+            onClick: () => onSelect(active),
+            className: 'btn-3d',
+            style: { 
+              width: '100%', background: roles.find(r => r.id === active).color, color: '#fff',
+              padding: '16px', fontSize: '16px', boxShadow: `0 6px 0 rgba(0,0,0,0.1)`
+            }
+          }, 'Masuk ke Dasbor')
+        )
+      );
+    }
+
+    function QuizScreen({ onBack }) {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [hearts, setHearts] = useState(5);
+      const [wrongId, setWrongId] = useState(null); // Hanya mencatat yang salah klik
+      const [isCorrect, setIsCorrect] = useState(false);
+      const [timer, setTimer] = useState(0); // 300 detik = 5 menit
+      const [isLocked, setIsLocked] = useState(false);
+
+      const quiz = QUIZ_DATA[currentIndex];
+
+      // Timer Logic untuk nyawa
+      useEffect(() => {
+        let interval;
+        if (hearts === 0) {
+          setIsLocked(true);
+          if (timer === 0) setTimer(300);
+          interval = setInterval(() => {
+            setTimer(prev => {
+              if (prev <= 1) {
+                setHearts(1);
+                setIsLocked(false);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        }
+        return () => clearInterval(interval);
+      }, [hearts, timer]);
+
+      const formatTime = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2, '0')}`;
+
+      const handleOptionClick = (optId) => {
+        if (isCorrect || isLocked || wrongId === optId) return;
+
+        if (optId === quiz.correct) {
+          setIsCorrect(true);
+          setWrongId(null);
+        } else {
+          setWrongId(optId);
+          setHearts(prev => Math.max(0, prev - 1));
+        }
+      };
+
+      if (isLocked) {
+        return e('div', { style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '30px', textAlign: 'center' }},
+          e('div', { style: { fontSize: '60px', marginBottom: '20px' }}, '💔'),
+          e('h2', { style: { fontWeight: '900', marginBottom: '10px' }}, 'Nyawa Habis!'),
+          e('p', { style: { color: '#64748b', marginBottom: '30px' }}, 'Istirahat sejenak. Nyawa akan terisi otomatis dalam:'),
+          e('div', { style: { fontSize: '32px', fontWeight: '900', color: 'var(--red)', background: '#fff1f1', padding: '15px 30px', borderRadius: '20px' }}, formatTime(timer)),
+          e('button', { onClick: onBack, style: { marginTop: '40px', background: 'none', border: 'none', color: '#64748b', fontWeight: '700', cursor: 'pointer' }}, 'Kembali ke Menu')
+        );
+      }
+
+      return e('div', { style: { flex: 1, display: 'flex', flexDirection: 'column' }},
+        // Header
+        e('div', { style: { padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #f1f5f9' }},
+          e('button', { onClick: onBack, style: { background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}, '✕'),
+          e('div', { style: { display: 'flex', gap: '5px' }},
+            [...Array(5)].map((_, i) => e('span', { key: i, style: { fontSize: '20px', opacity: i < hearts ? 1 : 0.2, filter: i < hearts ? 'none' : 'grayscale(1)' }}, '❤️'))
+          )
+        ),
+
+        e('div', { className: 'scroll-area', style: { padding: '20px' }},
+          e('div', { style: { background: '#e0f5ff', color: '#0891d4', padding: '5px 15px', borderRadius: '10px', display: 'inline-block', fontSize: '12px', fontWeight: '800', marginBottom: '15px' }}, `UNIT ${quiz.id}: ${quiz.concept.toUpperCase()}`),
+          e('h3', { style: { fontSize: '20px', fontWeight: '800', marginBottom: '25px', lineHeight: '1.4' }}, quiz.question),
+
+          // Options
+          e('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' }},
+            quiz.options.map(opt => {
+              const isSelectedWrong = wrongId === opt.id;
+              const isSelectedRight = isCorrect && opt.id === quiz.correct;
+              
+              let borderColor = '#e2e8f0';
+              let bgColor = '#fff';
+              let shadowColor = '#e2e8f0';
+
+              if (isSelectedWrong) { borderColor = 'var(--red)'; bgColor = '#fff1f1'; shadowColor = '#ffccd1'; }
+              if (isSelectedRight) { borderColor = 'var(--primary)'; bgColor = '#f0fff4'; shadowColor = '#c6f6d5'; }
+
+              return e('button', {
+                key: opt.id,
+                onClick: () => handleOptionClick(opt.id),
+                className: 'btn-3d',
+                style: {
+                  textAlign: 'left', padding: '20px', borderRadius: '16px', border: `2px solid ${borderColor}`,
+                  background: bgColor, boxShadow: `0 4px 0 ${shadowColor}`, display: 'flex', alignItems: 'center', gap: '15px'
+                }
+              },
+                e('div', { style: { width: '30px', height: '30px', borderRadius: '8px', background: isSelectedWrong ? 'var(--red)' : isSelectedRight ? 'var(--primary)' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: (isSelectedWrong || isSelectedRight) ? '#fff' : '#64748b', fontWeight: '800' }}, opt.id),
+                e('span', { style: { fontWeight: '700', color: '#1e293b' }}, opt.text)
+              );
+            })
+          )
+        ),
+
+        // Feedback Banner
+        (isCorrect || wrongId) && e('div', {
+          style: {
+            background: isCorrect ? '#dcfce7' : '#fee2e2', padding: '30px 20px',
+            animation: 'fadeIn 0.3s ease-out'
+          }
+        },
+          e('h4', { style: { color: isCorrect ? '#166534' : '#991b1b', fontWeight: '900', marginBottom: '5px' }}, isCorrect ? 'Luar Biasa! ✨' : 'Kurang Tepat — Coba lagi!'),
+          e('p', { style: { fontSize: '13px', color: isCorrect ? '#166534' : '#991b1b', marginBottom: '20px', lineHeight: '1.5' }}, isCorrect ? quiz.wisdom : 'Pilihanmu belum mencerminkan adab yang tepat dalam situasi ini.'),
+          isCorrect && e('button', {
+            onClick: () => {
+              if (currentIndex < QUIZ_DATA.length - 1) {
+                setCurrentIndex(currentIndex + 1);
+                setIsCorrect(false);
+                setWrongId(null);
+              } else {
+                onBack(); // Tamat
+              }
+            },
+            className: 'btn-3d',
+            style: { width: '100%', background: 'var(--primary)', color: '#fff', padding: '15px', boxShadow: '0 4px 0 var(--primary-dark)' }
+          }, 'Lanjutkan')
+        )
+      );
+    }
+
+    function App() {
+      const [screen, setScreen] = useState('welcome');
+
+      return e('div', { id: 'app-container' },
+        screen === 'welcome' && e(WelcomeScreen, { onNext: () => setScreen('roles') }),
+        screen === 'roles' && e(RoleSelection, { onSelect: (role) => setScreen('quiz') }),
+        screen === 'quiz' && e(QuizScreen, { onBack: () => setScreen('roles') })
+      );
+    }
+
+    // Render
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(e(App));
+  </script>
+</body>
+</html>
