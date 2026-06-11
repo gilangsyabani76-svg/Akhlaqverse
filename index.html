@@ -1,0 +1,2529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AKHLAQVERSE — Platform Akhlak Digital</title>
+  <!-- React 18 + Babel Standalone via unpkg (reliable for GitHub Pages) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #0f0f0f;
+      /* Center the phone shell */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: auto; /* allow page scroll on very short viewports */
+    }
+    /* ── DESKTOP: just a centering wrapper ── */
+    #root {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* No height/width constraints here — shell is self-sized */
+      padding: 20px 0; /* breathing room top+bottom */
+    }
+    /* ═══════════════════════════════════════
+       FIXED PHONE SHELL — 402 × 874 px
+       NEVER grows or shrinks
+    ═══════════════════════════════════════ */
+    #phone-shell {
+      /* Hard-locked dimensions */
+      width:  402px;
+      height: 874px;
+      min-width:  402px;
+      min-height: 874px;
+      max-width:  402px;
+      max-height: 874px;
+      /* iPhone-style frame */
+      background: #fff;
+      border-radius: 52px;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+      /* Stack children as flex column so app-inner fills the space */
+      display: flex;
+      flex-direction: column;
+      /* Outer chrome ring + shadow */
+      box-shadow:
+        0 0 0 2px  #555,
+        0 0 0 11px #1a1a1a,
+        0 0 0 13px #3a3a3a,
+        0 40px 100px rgba(0,0,0,.85),
+        0  0   80px rgba(99,102,241,.15);
+    }
+    /* Dynamic island / notch */
+    #phone-shell::before {
+      content: '';
+      position: absolute;
+      top: 12px; left: 50%;
+      transform: translateX(-50%);
+      width: 120px; height: 30px;
+      background: #1a1a1a;
+      border-radius: 20px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    /* Home indicator */
+    #phone-shell::after {
+      content: '';
+      position: absolute;
+      bottom: 10px; left: 50%;
+      transform: translateX(-50%);
+      width: 120px; height: 5px;
+      background: rgba(0,0,0,.35);
+      border-radius: 3px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    /* ── app-inner: fills shell, pads past notch & home bar ── */
+    #app-inner {
+      /* Fill the shell exactly — no flex-grow tricks */
+      width:  100%;
+      height: 100%;
+      overflow: hidden;
+      /* Pad content away from hardware chrome */
+      padding-top:    42px;  /* clears dynamic island */
+      padding-bottom: 22px;  /* clears home indicator */
+      /* Flex column so react-root can flex:1 inside */
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+    /* ── react-root: the React app lives here — fills remaining height ── */
+    #react-root {
+      /* Take ALL remaining height after padding — never grow beyond it */
+      flex: 1;
+      min-height: 0;
+      max-height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* Background wallpaper behind the phone */
+    .desktop-bg {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 40%, #1a237e44 0%, transparent 60%),
+                  radial-gradient(ellipse at 70% 70%, #4a148c33 0%, transparent 60%),
+                  linear-gradient(135deg, #0a0a0a 0%, #111827 100%);
+      z-index: -1;
+    }
+    /* Decorative blurred orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .orb-1 { width:400px;height:400px;background:#1cb0f6;top:-100px;left:-100px; }
+    .orb-2 { width:350px;height:350px;background:#58cc02;bottom:-80px;right:-80px; }
+    .orb-3 { width:250px;height:250px;background:#ce82ff;top:40%;right:5%; }
+    /* Tiny brand label under the phone */
+    .phone-label {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,.25);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-family: 'Nunito', sans-serif;
+      white-space: nowrap;
+      z-index: 1;
+    }
+    /* ── Scale the fixed 402×874 shell to fit smaller desktop screens ── */
+    @media (max-height: 960px) {
+      #phone-shell { transform: scale(0.94); transform-origin: center center; }
+    }
+    @media (max-height: 880px) {
+      #phone-shell { transform: scale(0.86); transform-origin: center center; }
+    }
+    @media (max-height: 780px) {
+      #phone-shell { transform: scale(0.76); transform-origin: center center; }
+    }
+    @media (max-height: 680px) {
+      #phone-shell { transform: scale(0.66); transform-origin: center center; }
+    }
+    /* ── On actual phone: full-screen native feel ── */
+    @media (max-width: 440px) {
+      body {
+        background: #fff;
+        align-items: flex-start;
+        justify-content: flex-start;
+        overflow: hidden;
+        padding: 0;
+      }
+      #root { padding: 0; }
+      #phone-shell {
+        /* Override the fixed size with viewport fill */
+        width:      100vw  !important;
+        height:     100dvh !important;
+        min-width:  unset  !important;
+        min-height: unset  !important;
+        max-width:  unset  !important;
+        max-height: unset  !important;
+        border-radius: 0   !important;
+        box-shadow:  none  !important;
+        transform:   none  !important;
+      }
+      #phone-shell::before, #phone-shell::after { display: none; }
+      #app-inner {
+        padding-top:    env(safe-area-inset-top,    0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .desktop-bg, .orb, .phone-label { display: none; }
+    }
+    @keyframes pulse       { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.15);opacity:.35} }
+    @keyframes slideUp     { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes slideDown   { from{transform:translateY(-10px);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes popIn       { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    @keyframes floatUp     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    @keyframes shake       { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+    @keyframes spin        { to{transform:rotate(360deg)} }
+    @keyframes heartLost   { 0%{transform:scale(1)} 50%{transform:scale(1.4)} 100%{transform:scale(1)} }
+    @keyframes fadeOut     { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.96); } }
+    .fade-out { animation: fadeOut 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+    input::placeholder { color: rgba(255,255,255,.3) !important; }
+    input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 100px rgba(255,255,255,.08) inset !important;
+      -webkit-text-fill-color: #fff !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Desktop background -->
+  <div class="desktop-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <!-- Phone frame -->
+  <div id="root">
+    <div id="phone-shell">
+      <div id="app-inner">
+        <!-- React mounts here -->
+        <div id="react-root">
+          <!-- Shown while Babel compiles (136KB takes ~1-2s) -->
+          <div id="loading-screen" style="
+            position:absolute; inset:0;
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            background:linear-gradient(160deg,#0a1f0a,#0d3b0d,#1a5e1a);
+            font-family:'Nunito',sans-serif; color:#fff; gap:16px;
+          ">
+            <div style="font-size:52px; animation:floatUp 2s ease-in-out infinite">🕌</div>
+            <div style="font-weight:900; font-size:22px; letter-spacing:2px">AKHLAQVERSE</div>
+            <div style="font-size:13px; opacity:0.7">Memuat platform...</div>
+            <div style="
+              width:40px; height:40px; border:4px solid rgba(255,255,255,.2);
+              border-top:4px solid #58cc02; border-radius:50%;
+              animation:spin 0.8s linear infinite;
+            "></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="phone-label">✦ AKHLAQVERSE ✦</div>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useRef } = React;
+/* ═══════════════════════════════════════════════════════════════
+   AKHLAQVERSE — FULL INTERACTIVE PROTOTYPE
+   3 Dashboards: Siswa · Guru · Orang Tua
+   Every button is clickable with real state transitions
+═══════════════════════════════════════════════════════════════ */
+// ─── PALETTE ─────────────────────────────────────────────────
+const C = {
+  green:"#58cc02", greenDk:"#46a302", greenBg:"#e8fcd4",
+  blue:"#1cb0f6",  blueDk:"#0891d4",  blueBg:"#e0f5ff",
+  gold:"#ffc800",  goldDk:"#e6a800",  goldBg:"#fff8e0",
+  red:"#ff4b4b",   redDk:"#cc0000",   redBg:"#ffe5e5",
+  purple:"#ce82ff",purpleBg:"#f5eaff",
+  teal:"#00c8a0",  tealBg:"#e0faf5",
+  ink:"#1f1f1f",   ink2:"#4b4b4b",    muted:"#afafaf",
+  surface:"#f7f7f7", white:"#ffffff",
+  border:"#e8e8e8",
+};
+// ─── QUIZ DATA ────────────────────────────────────────────────
+const QUIZZES = [
+  { id:1, unit:"Unit 1", icon:"💬", color:C.blue, title:"Cyberbullying",
+    bot:"Grup WhatsApp kelasmu ramai mengejek teman karena salah pakai seragam. Mereka kirim stiker merendahkan. Apa yang kamu lakukan?",
+    choices:[
+      {id:"A",text:"Ikut kirim stiker lucu biar dianggap kompak.",type:"bad"},
+      {id:"B",text:"Diam saja sebagai silent reader.",type:"mid"},
+      {id:"C",text:"Tegur sopan di grup, kirim DM ke korban untuk menguatkan.",type:"best"},
+    ], correct:"C", concept:"Muru'ah", points:20,
+    successHadith:"'Seorang muslim adalah seseorang yang muslim lainnya selamat dari lisan & tangannya.' (HR. Bukhari)",
+    failMsg:"Diam atau ikut-ikutan merusak ukhuwah Islamiyah.",
+  },
+  { id:2, unit:"Unit 2", icon:"📰", color:C.teal, title:"Anti-Hoaks",
+    bot:"Pesan berantai menyebar di grup keluarga: 'Jajanan sekolah X berbahaya!' Tidak ada sumber resmi. Tindakanmu?",
+    choices:[
+      {id:"A",text:"Langsung sebarkan agar dianggap peduli.",type:"bad"},
+      {id:"B",text:"Diamkan saja tanpa konfirmasi.",type:"mid"},
+      {id:"C",text:"Tahan, cek di sumber resmi, larang orang tua menyebarkan sebelum valid.",type:"best"},
+    ], correct:"C", concept:"Tabayyun", points:20,
+    successHadith:"QS. Al-Hujurat 49:6 — 'Jika datang kepadamu orang fasik membawa berita, periksalah dengan teliti...'",
+    failMsg:"Menyebar tanpa verifikasi berpotensi fitnah dan kepanikan massal.",
+  },
+  { id:3, unit:"Unit 3", icon:"🎮", color:C.purple, title:"Toxic Gaming",
+    bot:"Timmu kalah game karena satu teman error. Anggota lain memaki di chat. Bagaimana ketahanan adabmu?",
+    choices:[
+      {id:"A",text:"Ikut memaki untuk meluapkan kekesalan.",type:"bad"},
+      {id:"B",text:"Diam tapi dalam hati mengutuk.",type:"mid"},
+      {id:"C",text:"Mute pemain toxic, ketik semangat: 'Gapapa, next game lebih kompak!'",type:"best"},
+    ], correct:"C", concept:"Kadhmin al-Ghaizh", points:20,
+    successHadith:"'Orang kuat adalah yang mampu menahan dirinya saat marah.' (HR. Bukhari)",
+    failMsg:"Lisan kotor di ruang siber mencerminkan hati yang rapuh.",
+  },
+  { id:4, unit:"Unit 4", icon:"🔒", color:C.gold, title:"Privasi Digital",
+    bot:"Kamu tidak sengaja dapat screenshot aib teman. Sahabatmu memaksa minta: 'Cuma mau tahu!' Tindakanmu?",
+    choices:[
+      {id:"A",text:"Kasih dengan syarat 'jangan disebar lagi'.",type:"bad"},
+      {id:"B",text:"Hapus screenshot tapi ceritakan garis besarnya.",type:"mid"},
+      {id:"C",text:"Tolak, hapus file, ingatkan temanmu tentang larangan ghibah digital.",type:"best"},
+    ], correct:"C", concept:"Hifzhul Aurat", points:20,
+    successHadith:"'Barangsiapa menutupi aib seorang muslim, Allah tutupi aibnya di dunia & akhirat.' (HR. Muslim)",
+    failMsg:"Aib digital meninggalkan jejak abadi. Kamu membuka pintu Ghibah Digital.",
+  },
+  { id:5, unit:"Unit 5", icon:"🎯", color:C.green, title:"Peer Pressure",
+    bot:"Gengmu bikin TikTok challenge berbahaya. Mereka tag akunmu: 'Kalau gak ikut, keluar grup!' Responsmu?",
+    choices:[
+      {id:"A",text:"Ikut buat video demi jaga eksistensi.",type:"bad"},
+      {id:"B",text:"Buat tapi set privat untuk geng saja.",type:"mid"},
+      {id:"C",text:"Tolak tegas & sopan — pertemanan bukan soal kepatuhan buta.",type:"best"},
+    ], correct:"C", concept:"Izzah", points:20,
+    successHadith:"Tidak ada ketaatan kepada makhluk dalam kemaksiatan kepada Allah. Kamu merdeka secara spiritual!",
+    failMsg:"Mengorbankan akhlak demi pengakuan semu adalah kerapatan mental (Inshiyad).",
+  },
+];
+// ─── MOCK DATA ────────────────────────────────────────────────
+const STUDENTS = [
+  {id:1,name:"Fatimah Az-Zahra",grade:"8A",gems:340,streak:12,hearts:5,doneUnits:3,alert:false,
+    journal:"Hari ini saya menemukan teman yang sedang bersedih...",
+    emotion:[4,3,4,5,4,5,4],selfCtrl:[3,4,4,5,4,4,5],integrity:[5,5,4,5,5,4,5]},
+  {id:2,name:"Ahmad Fauzi",grade:"8A",gems:180,streak:5,hearts:3,doneUnits:2,alert:false,
+    journal:"Saya belajar bahwa menyebarkan berita harus diverifikasi dulu...",
+    emotion:[3,3,4,3,3,4,3],selfCtrl:[4,3,3,4,4,3,4],integrity:[3,4,4,3,4,4,3]},
+  {id:3,name:"Siti Maryam",grade:"8B",gems:60,streak:2,hearts:1,doneUnits:1,alert:true,
+    journal:"",
+    emotion:[2,1,2,1,2,1,2],selfCtrl:[2,2,1,2,1,2,2],integrity:[2,2,2,1,2,2,1]},
+  {id:4,name:"Rizky Ramadhan",grade:"8B",gems:420,streak:18,hearts:5,doneUnits:5,alert:false,
+    journal:"Prinsip Izzah membantu saya menolak ajakan negatif teman...",
+    emotion:[5,4,5,5,4,5,5],selfCtrl:[5,5,5,4,5,5,5],integrity:[5,5,5,5,4,5,5]},
+];
+const MISSIONS = [
+  {id:1,student:"Fatimah Az-Zahra",unit:"Unit 1 – Muru'ah",desc:"Apakah anak membela teman yang terpojok minggu ini?",status:"pending",date:"08 Jun"},
+  {id:2,student:"Ahmad Fauzi",unit:"Unit 2 – Tabayyun",desc:"Apakah anak mengonfirmasi kebenaran kabar sebelum percaya?",status:"pending",date:"07 Jun"},
+  {id:3,student:"Rizky Ramadhan",unit:"Unit 5 – Izzah",desc:"Apakah anak berani berkata 'tidak' pada ajakan negatif?",status:"approved",date:"06 Jun"},
+];
+// ─── MINI SPARKLINE ───────────────────────────────────────────
+const Spark = ({data,color,h=32,w=80})=>{
+  const max=Math.max(...data),min=Math.min(...data);
+  const pts=data.map((v,i)=>{
+    const x=(i/(data.length-1))*w;
+    const y=h-((v-min)/(max-min||1))*(h-4)-2;
+    return `${x},${y}`;
+  }).join(" ");
+  return(
+    <svg width={w} height={h}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      {data.map((v,i)=>{
+        const x=(i/(data.length-1))*w;
+        const y=h-((v-min)/(max-min||1))*(h-4)-2;
+        return <circle key={i} cx={x} cy={y} r="2.5" fill={color}/>;
+      })}
+    </svg>
+  );
+};
+// ─── BAR CHART ────────────────────────────────────────────────
+const MiniBar=({value,max=5,color})=>(
+  <div style={{display:"flex",alignItems:"center",gap:6}}>
+    <div style={{flex:1,height:8,background:C.border,borderRadius:4,overflow:"hidden"}}>
+      <div style={{width:`${(value/max)*100}%`,height:"100%",background:color,borderRadius:4,transition:"width .5s ease"}}/>
+    </div>
+    <span style={{fontSize:12,fontWeight:800,color,fontFamily:"'Nunito',sans-serif",minWidth:16}}>{value}</span>
+  </div>
+);
+// ─── MODAL WRAPPER ────────────────────────────────────────────
+const Modal=({open,onClose,title,children,color=C.blue})=>{
+  if(!open)return null;
+  return(
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:"24px 24px 0 0",width:"100%",maxWidth:420,maxHeight:"85vh",overflow:"hidden",display:"flex",flexDirection:"column",animation:"slideUp .3s ease"}}>
+        <div style={{background:`linear-gradient(135deg,${color},${color}cc)`,padding:"18px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span style={{fontWeight:900,fontSize:17,color:"#fff",fontFamily:"'Nunito',sans-serif"}}>{title}</span>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,.25)",border:"none",borderRadius:8,width:32,height:32,cursor:"pointer",fontSize:16,color:"#fff",fontWeight:900}}>✕</button>
+        </div>
+        <div style={{overflowY:"auto",padding:"18px 20px",flex:1}}>{children}</div>
+      </div>
+    </div>
+  );
+};
+// ─── TOAST ────────────────────────────────────────────────────
+const Toast=({msg,show})=>(
+  <div style={{position:"fixed",top:24,left:"50%",transform:`translateX(-50%) translateY(${show?0:-80}px)`,
+    transition:"transform .35s ease",zIndex:1200,background:C.ink,color:"#fff",
+    padding:"10px 22px",borderRadius:20,fontWeight:800,fontSize:14,
+    fontFamily:"'Nunito',sans-serif",whiteSpace:"nowrap",boxShadow:"0 6px 20px rgba(0,0,0,.3)"}}>
+    {msg}
+  </div>
+);
+/* ══════════════════════════════════════════════════════════════
+   STUDENT DASHBOARD
+══════════════════════════════════════════════════════════════ */
+const XOFF = [-64, 0, 64, 0, -64];
+// ─── SECTION CURRICULUM DATA ─────────────────────────────────
+// Section 1 — each node has a `questions` array of 10 items
+const S1_UNIT1_QUESTIONS = [
+  { qid:"s1u1q1", bot:"Saat bermain bola di dalam rumah, kamu tidak sengaja menghilangkan/merusakkan vas bunga Ibu. Ibu menanyakan siapa pelakunya. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Menyalahkan kucing peliharaan."},{id:"B",text:"Diam saja sampai ada yang bertanya."},{id:"C",text:"Mengaku jujur & minta maaf kepada Ibu."}],
+    correct:"C", concept:"Shidq",
+    successMsg:"Luar biasa! Kejujuran adalah mahkota akhlak mulia.",
+    successHadith:"'Sesungguhnya kejujuran membawa kepada kebaikan dan kebaikan membawa ke surga.' (HR. Bukhari)",
+    failMsg:"Berbohong atau melarikan diri dari tanggung jawab merusak kepercayaan keluarga.",
+  },
+  { qid:"s1u1q2", bot:"Teman sebangkumu menyodorkan kertas contekan saat ujian karena tahu kamu belum belajar. Tindakanmu?",
+    choices:[{id:"A",text:"Menerima kertasnya dan menyalin jawaban."},{id:"B",text:"Menolak dengan sopan dan mengerjakan semampunya."},{id:"C",text:"Membiarkan kertas di atas meja tanpa dipakai."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Hebat! Menolak contekan adalah bentuk kejujuran akademik yang sesungguhnya.",
+    successHadith:"'Barangsiapa menipu kami maka dia bukan golongan kami.' (HR. Muslim)",
+    failMsg:"Menyontek merusak integritas dan tidak mencerminkan sifat siddiq seorang muslim.",
+  },
+  { qid:"s1u1q3", bot:"Penjual kantin sekolah salah memberikan kembalian — lebih banyak Rp20.000 dari seharusnya. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Mengantongi uangnya karena itu kesalahan si penjual."},{id:"B",text:"Mengembalikan kelebihan uangnya saat itu juga."},{id:"C",text:"Menyumbangkan ke kotak amal sekolah."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Excellent! Mengembalikan hak orang lain adalah tanda hati yang bersih.",
+    successHadith:"'Tunaikanlah amanah kepada orang yang memberi amanah kepadamu.' (HR. Abu Dawud)",
+    failMsg:"Mengambil hak orang lain meski karena kesalahannya sendiri tetaplah tidak jujur.",
+  },
+  { qid:"s1u1q4", bot:"Kamu merusakkan penggaris milik teman kelas yang kamu pinjam kemarin sore. Tindakanmu?",
+    choices:[{id:"A",text:"Mengembalikan diam-diam ke tasnya tanpa berkata apapun."},{id:"B",text:"Jujur mengaku, minta maaf, dan menawarkan menggantikannya."},{id:"C",text:"Bilang kalau penggarisnya hilang entah kemana."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Keren! Mengakui dan mengganti kerusakan adalah bukti kejujuran dan tanggung jawab.",
+    successHadith:"'Tanda-tanda orang munafik ada tiga: bila berbicara ia berdusta, bila berjanji ia ingkar, dan bila diberi amanah ia berkhianat.' (HR. Bukhari)",
+    failMsg:"Menyembunyikan kerusakan atau berbohong tentangnya adalah bentuk pengkhianatan kepercayaan.",
+  },
+  { qid:"s1u1q5", bot:"Kamu pulang terlambat karena keasyikan nongkrong, padahal pamitnya pergi belajar kelompok. Apa yang kamu katakan ke orang tua?",
+    choices:[{id:"A",text:"Berbohong, bilang ban motor bocor di jalan."},{id:"B",text:"Jujur keasyikan ngobrol dan siap menerima konsekuensinya."},{id:"C",text:"Menangis pura-pura sakit supaya ortu kasihan."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Mantap! Mengakui kesalahan dan siap bertanggung jawab adalah keberanian sejati.",
+    successHadith:"'Sesungguhnya orang jujur dicatat di sisi Allah sebagai orang yang sangat jujur (shiddiq).' (HR. Bukhari & Muslim)",
+    failMsg:"Berbohong kepada orang tua merusak kepercayaan yang susah dibangun kembali.",
+  },
+  { qid:"s1u1q6", bot:"Kamu menemukan dompet berisi banyak uang tunai dan kartu identitas siswa lain tergeletak di koridor sekolah. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Ambil uangnya dan buang dompetnya."},{id:"B",text:"Serahkan dompet utuh ke pos satpam atau ruang guru."},{id:"C",text:"Biarkan saja tergeletak di lantai."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Sempurna! Menyerahkan barang temuan secara utuh adalah akhlak shidq yang mulia.",
+    successHadith:"'Luqathah (barang temuan) adalah bara api, maka ambillah atau tinggalkanlah.' (HR. Muslim) — menyerahkan ke pihak berwenang adalah solusi terbaik.",
+    failMsg:"Mengambil uang dari dompet temuan sama dengan mencuri hak orang lain.",
+  },
+  { qid:"s1u1q7", bot:"Kamu tidak mengerjakan tugas karena ketiduran setelah main game semalaman. Guru menanyakanmu di depan kelas. Apa yang kamu katakan?",
+    choices:[{id:"A",text:"Beralasan bahwa buku tugas tertinggal di rumah."},{id:"B",text:"Jujur mengakui kelalaian, minta maaf, dan siap mengerjakan tugas tambahan."},{id:"C",text:"Pura-pura sakit perut dan minta izin ke UKS."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Bravo! Mengakui kelalaian di depan umum membutuhkan keberanian luar biasa.",
+    successHadith:"'Hendaklah kalian berlaku jujur, karena kejujuran menunjukkan kepada kebaikan.' (HR. Bukhari)",
+    failMsg:"Berbohong kepada guru di depan kelas memperburuk situasi dan merusak kepercayaan guru.",
+  },
+  { qid:"s1u1q8", bot:"Ayah memberi uang lebih untuk beli buku. Ternyata toko buku sedang diskon besar sehingga ada sisa uang cukup banyak. Apa yang kamu lakukan dengan sisa uangnya?",
+    choices:[{id:"A",text:"Menggunakan sisa uang diskon untuk top-up game tanpa izin Ayah."},{id:"B",text:"Mengembalikan seluruh sisa uang diskon kepada Ayah dengan jujur."},{id:"C",text:"Menyimpan sendiri diam-diam untuk keperluan nanti."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Luar biasa! Mengembalikan uang sisa dengan jujur menunjukkan hati yang amanah.",
+    successHadith:"Allah SWT mencintai hamba yang jujur dalam urusan kecil maupun besar.",
+    failMsg:"Menggunakan uang orang tua tanpa izin, meski sisa, tetaplah tidak jujur dan tidak amanah.",
+  },
+  { qid:"s1u1q9", bot:"Kamu mendengar teman difitnah mencuri oleh geng kelas. Padahal kamu tahu pasti dia bersamamu saat kejadian itu terjadi. Apa tindakanmu?",
+    choices:[{id:"A",text:"Diam saja karena takut dikucilkan oleh geng."},{id:"B",text:"Berani bicara jujur memberikan kesaksian untuk membela teman."},{id:"C",text:"Ikut menjauhi teman tersebut supaya aman."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Luar biasa berani! Kesaksian jujur di saat sulit adalah puncak nilai shidq.",
+    successHadith:"'Jadilah penegak keadilan dan jadilah saksi yang jujur karena Allah.' (QS. An-Nisa: 135)",
+    failMsg:"Diam atau ikut-ikutan menzalimi teman yang tidak bersalah adalah bentuk kezaliman.",
+  },
+  { qid:"s1u1q10", bot:"Kamu menyenggol pajangan di sebuah toko hingga retak sedikit. Petugas toko datang dan bertanya siapa pelakunya. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Menunjuk pengunjung lain secara acak agar tidak disalahkan."},{id:"B",text:"Jujur mengakui kesalahanmu dan mendiskusikan ganti rugi."},{id:"C",text:"Kabur cepat sebelum ketahuan dan berpura-pura tidak ada di sana."}],
+    correct:"B", concept:"Shidq",
+    successMsg:"Sempurna! Mengakui kesalahan kepada orang yang berhak adalah keberanian dan kejujuran sejati.",
+    successHadith:"'Sesungguhnya Allah tidak melihat rupa dan harta kalian, tetapi Dia melihat hati dan amal kalian.' (HR. Muslim)",
+    failMsg:"Menuduh orang lain atau kabur dari tanggung jawab adalah tindakan pengecut yang tidak islami.",
+  },
+];
+const S1_UNIT2_QUESTIONS = [
+  { qid:"s1u2q1", bot:"Orang tuamu memanggil saat kamu sedang asyik bermain game online yang tidak bisa di-pause. Apa responmu?",
+    choices:[{id:"A",text:"Pura-pura tidak mendengar dan terus bermain."},{id:"B",text:"Berteriak ketus: 'Bentar, lagi tanggung!'"},{id:"C",text:"Sahut dengan sopan, izin ke teman game, lalu segera datangi orang tua."}],
+    correct:"C", concept:"Birrul Walidain",
+    successMsg:"Hebat! Mendahulukan panggilan orang tua di atas kesenangan dunia adalah bakti yang nyata.",
+    successHadith:"'Ridha Allah ada pada ridha orang tua, dan murka Allah ada pada murka orang tua.' (HR. Tirmidzi)",
+    failMsg:"Mengabaikan atau menjawab dengan ketus panggilan orang tua termasuk perbuatan yang tidak diridhai Allah.",
+  },
+  { qid:"s1u2q2", bot:"Ibu memasak makanan yang sangat tidak kamu sukai hari ini. Apa sikapmu di meja makan?",
+    choices:[{id:"A",text:"Komplain keras dan menolak makan sambil cemberut."},{id:"B",text:"Mencicipi sedikit tanpa mencela atau menolak dengan sangat halus."},{id:"C",text:"Diam-diam beli makan di luar tanpa sepengetahuan Ibu."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Luar biasa! Menghormati masakan orang tua adalah bentuk syukur dan bakti yang indah.",
+    successHadith:"Rasulullah SAW tidak pernah mencela makanan. Jika suka beliau makan, jika tidak suka beliau tinggalkan. (HR. Bukhari)",
+    failMsg:"Menolak makanan Ibu dengan kasar menyakiti hati seorang yang telah lelah memasak untukmu.",
+  },
+  { qid:"s1u2q3", bot:"Ayah menasihatimu panjang lebar karena nilai ujianmu turun akibat sering begadang. Bagaimana sikapmu?",
+    choices:[{id:"A",text:"Memotong pembicaraan Ayah dan membela diri dengan alasan-alasan."},{id:"B",text:"Mendengarkan dengan sabar, menunduk hormat, dan berjanji memperbaiki diri."},{id:"C",text:"Keluar kamar dan membanting pintu karena merasa dimarahi."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Keren! Mendengarkan nasihat orang tua dengan sabar dan hormat adalah tanda hati yang bersih.",
+    successHadith:"QS. Al-Isra 17:23 — 'Jangan sekali-kali kamu mengatakan 'ah' kepada orang tua dan jangan membentak mereka.'",
+    failMsg:"Memotong pembicaraan atau kabur dari nasihat orang tua adalah sikap tidak hormat yang menyakitkan.",
+  },
+  { qid:"s1u2q4", bot:"Orang tua belum mampu membelikan HP baru yang sedang tren di kalangan geng sekolahmu. Apa sikapmu?",
+    choices:[{id:"A",text:"Ngambek dan mogok sekolah sampai dibelikan HP baru."},{id:"B",text:"Memahami kondisi ekonomi orang tua dan bersyukur dengan apa yang ada."},{id:"C",text:"Terus membandingkan keadaanmu dengan orang tua teman-temanmu."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Masya Allah! Bersyukur dan memahami orang tua adalah kemuliaan yang sesungguhnya.",
+    successHadith:"'Barangsiapa bersyukur kepada Allah maka Dia akan menambah nikmatnya.' (QS. Ibrahim: 7)",
+    failMsg:"Menyusahkan orang tua dengan tuntutan materi yang mereka tidak mampu adalah beban yang berat bagi mereka.",
+  },
+  { qid:"s1u2q5", bot:"Ibu meminta bantuan menjaga adik sebentar, padahal kamu sudah janjian main ke rumah teman. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Menolak dengan alasan tugas kelompok mendesak — padahal itu bohong."},{id:"B",text:"Menunda janjian dengan teman demi membantu Ibu terlebih dahulu."},{id:"C",text:"Menjaga adik sambil marah-marah dan mengomel terus-menerus."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Subhanallah! Mendahulukan keperluan orang tua dari kesenangan pribadi adalah jihad yang mulia.",
+    successHadith:"Abdullah bin Mas'ud bertanya kepada Nabi: 'Amal apa yang paling dicintai Allah?' Beliau menjawab: 'Shalat tepat waktu, kemudian berbakti kepada orang tua.' (HR. Bukhari)",
+    failMsg:"Berbohong kepada orang tua atau menjaga adik sambil marah-marah sama-sama menyakiti hati mereka.",
+  },
+  { qid:"s1u2q6", bot:"Kamu melihat Ayah pulang kerja tampak sangat kelelahan dan membawa banyak barang bawaan berat. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Tetap duduk santai menonton TV karena kamu juga sedang istirahat."},{id:"B",text:"Segera menyambut, mencium tangan, dan membawakan barang-barangnya."},{id:"C",text:"Menyapa dari jauh tanpa beranjak untuk membantu."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Alhamdulillah! Menyambut orang tua dengan hangat dan membantu mereka adalah surga yang nyata.",
+    successHadith:"'Surga ada di bawah telapak kaki ibu.' (HR. Ahmad) — menghormati dan melayani orang tua adalah jalan menuju surga.",
+    failMsg:"Membiarkan orang tua yang kelelahan merupakan kesia-siaan kesempatan beramal yang sangat berharga.",
+  },
+  { qid:"s1u2q7", bot:"Orang tua melarangmu keluar malam minggu karena cuaca buruk dan demi keselamatanmu. Apa reaksimu?",
+    choices:[{id:"A",text:"Kabur diam-diam lewat pintu belakang setelah mereka tidur."},{id:"B",text:"Patuh dengan ikhlas dan mencari kesibukan bermanfaat di rumah."},{id:"C",text:"Mengomel di status media sosial tentang betapa ketatnya orang tuamu."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Mantap! Ketaatan kepada orang tua dalam hal yang baik adalah ibadah yang bernilai tinggi.",
+    successHadith:"'Tidak ada ketaatan kepada makhluk dalam kemaksiatan kepada Allah, sesungguhnya ketaatan itu hanya dalam kebaikan.' (HR. Bukhari)",
+    failMsg:"Kabur dari rumah atau menjelek-jelekkan orang tua di media sosial adalah perilaku yang sangat tidak terpuji.",
+  },
+  { qid:"s1u2q8", bot:"Kamu melihat orang tua melakukan kesalahan kecil atau typo saat mengetik di HP dan tidak bisa memperbaikinya. Apa reaksimu?",
+    choices:[{id:"A",text:"Menertawakan dan mengejeknya sebagai orang yang gagal teknologi (gagtek)."},{id:"B",text:"Membantu membetulkan dengan sabar dan tutur kata yang lembut."},{id:"C",text:"Merebut HP-nya dengan ketus sambil berkata 'sini biar aku aja!'."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Indah sekali! Membantu orang tua dengan sabar dan penuh kasih adalah akhlak anak shalih.",
+    successHadith:"QS. Al-Isra 17:24 — 'Dan rendahkanlah dirimu terhadap keduanya dengan penuh kasih sayang dan ucapkanlah: Ya Tuhanku, sayangilah keduanya sebagaimana mereka telah mendidikku di waktu kecil.'",
+    failMsg:"Merendahkan orang tua di depan umum atau bersikap kasar kepada mereka adalah dosa yang berat.",
+  },
+  { qid:"s1u2q9", bot:"Orang tua meminta dipijat karena pegal-pegal, padahal kamu sendiri lelah sepulang sekolah. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Menolak tegas dengan alasan 'Aku juga capek!'"},{id:"B",text:"Menyisihkan rasa lelah sebentar dan memijat dengan ikhlas demi berbakti."},{id:"C",text:"Memijat asal-asalan hanya semenit lalu pergi ke kamar."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Masya Allah! Pengorbanan kecil demi orang tua bernilai pahala yang luar biasa besar di sisi Allah.",
+    successHadith:"Ibnu Abbas ra berkata: 'Tidak ada seorang muslim yang melihat wajah orang tuanya dengan pandangan kasih sayang, melainkan Allah mencatat baginya satu kebaikan.' (HR. Muslim)",
+    failMsg:"Menolak permintaan orang tua yang sederhana saat kamu masih mampu melakukannya adalah pengabaian yang menyakitkan.",
+  },
+  { qid:"s1u2q10", bot:"Kamu ingin minta uang saku tambahan untuk keperluan ekskul, tapi Ibu sedang terlihat sangat stres mengurus urusan rumah. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Langsung menodong meminta uang saat itu juga karena butuh."},{id:"B",text:"Menunggu suasana hati Ibu tenang, lalu menyampaikan dengan sopan dan sabar."},{id:"C",text:"Merengek dan menangis supaya Ibu cepat memberikan uangnya."}],
+    correct:"B", concept:"Birrul Walidain",
+    successMsg:"Keren banget! Membaca suasana hati orang tua dan memilih waktu yang tepat adalah adab yang tinggi.",
+    successHadith:"'Berbaktilah kepada orang tuamu dan anakmu akan berbakti kepadamu.' (HR. Thabrani)",
+    failMsg:"Memaksa orang tua yang sedang stres atau merengek untuk mendapatkan keinginan adalah sikap yang tidak dewasa.",
+  },
+];
+const S1_UNIT3_QUESTIONS = [
+  { qid:"s1u3q1", bot:"Teman dekat menitipkan uang kas kelas kepadamu karena dia harus pulang cepat. Apa yang kamu lakukan dengan uang tersebut?",
+    choices:[{id:"A",text:"Pakai uangnya untuk jajan dulu, nanti diganti sebelum disetor."},{id:"B",text:"Simpan dengan aman dan serahkan ke bendahara kelas besok pagi."},{id:"C",text:"Titipkan ke orang lain tanpa konfirmasi ke teman yang menitipkan."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Sempurna! Menjaga uang titipan dengan penuh tanggung jawab adalah inti dari sifat amanah.",
+    successHadith:"'Sesungguhnya Allah memerintahkan kalian untuk menunaikan amanah kepada yang berhak menerimanya.' (QS. An-Nisa: 58)",
+    failMsg:"Menggunakan uang titipan untuk keperluan pribadi meski berniat mengembalikan adalah bentuk pengkhianatan amanah.",
+  },
+  { qid:"s1u3q2", bot:"Kamu menjadi ketua kelompok tugas proyek, namun anggota kelompokmu pasif dan susah diatur. Apa tindakanmu?",
+    choices:[{id:"A",text:"Biarkan tugasnya terbengkalai karena bukan salahmu."},{id:"B",text:"Tetap bertanggung jawab, bagi tugas secara adil, dan rangkul setiap anggota."},{id:"C",text:"Kerjakan sendiri semua tugas lalu hapus nama anggota yang tidak aktif."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Hebat! Kepemimpinan yang bertanggung jawab bahkan di tengah kesulitan adalah amanah yang sesungguhnya.",
+    successHadith:"'Setiap kalian adalah pemimpin dan setiap pemimpin bertanggung jawab atas yang dipimpinnya.' (HR. Bukhari & Muslim)",
+    failMsg:"Meninggalkan tanggung jawab kepemimpinan adalah pengkhianatan amanah yang berdampak pada seluruh tim.",
+  },
+  { qid:"s1u3q3", bot:"Guru mempercayakan kunci lemari kelas kepadamu. Hari ini kamu terburu-buru ingin pulang lebih cepat. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Tinggalkan kunci di atas meja kelas begitu saja."},{id:"B",text:"Tetap mengunci lemari dengan teliti baru kemudian pulang."},{id:"C",text:"Kasih kunci ke sembarang teman yang masih di kelas."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Bagus! Menyelesaikan amanah dengan teliti bahkan saat terburu-buru adalah tanda karakter yang kuat.",
+    successHadith:"'Tidak sempurna iman seseorang yang tidak bisa dipercaya, dan tidak sempurna agama seseorang yang tidak menepati janji.' (HR. Ahmad)",
+    failMsg:"Meninggalkan tanggung jawab yang diberikan guru karena terburu-buru adalah mengingkari amanah.",
+  },
+  { qid:"s1u3q4", bot:"Seorang teman menceritakan rahasia pribadinya yang sangat sensitif kepadamu dan memohon agar tidak disebarkan. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Bercerita ke satu teman dekat lain dengan syarat dia harus merahasiakannya juga."},{id:"B",text:"Menjaga rahasia tersebut rapat-rapat dan tidak membahasnya lagi dengan siapapun."},{id:"C",text:"Menjadikannya bahan candaan ringan di tongkrongan — namanya tidak disebut."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Masya Allah! Menjaga rahasia orang lain adalah amanah paling berharga dalam persahabatan.",
+    successHadith:"'Apabila seseorang membicarakan sesuatu kepadamu kemudian ia pergi, maka perkataan itu adalah amanah bagimu.' (HR. Abu Dawud)",
+    failMsg:"Membocorkan rahasia meski hanya kepada satu orang tetaplah pengkhianatan amanah yang tidak bisa ditoleransi.",
+  },
+  { qid:"s1u3q5", bot:"Kamu meminjam laptop kakak, lalu tidak sengaja mengunduh file yang membuat laptopnya terkena virus. Apa tindakanmu?",
+    choices:[{id:"A",text:"Kembalikan diam-diam dan pura-pura tidak tahu menahu."},{id:"B",text:"Berterus terang kepada kakak, minta maaf, dan bawa ke tempat servis."},{id:"C",text:"Menyalahkan adik kecil yang sering memegang barang orang."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Keren! Mengakui kerusakan dan berinisiatif memperbaiki adalah tanggung jawab amanah yang sejati.",
+    successHadith:"'Pada hari kiamat setiap amanah akan dipertanggungjawabkan.' (Muttafaq 'alaihi)",
+    failMsg:"Menyembunyikan kerusakan atau menyalahkan orang lain atas kesalahanmu adalah pengkhianatan ganda.",
+  },
+  { qid:"s1u3q6", bot:"Kamu menjadi panitia pentas seni dan memegang dana konsumsi. Ada sisa anggaran yang tidak tercatat di laporan resmi. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Bagi-bagikan ke sesama panitia sebagai uang lelah yang layak."},{id:"B",text:"Laporkan secara transparan dan kembalikan ke kas sekolah."},{id:"C",text:"Pakai untuk jajan sendiri karena kamu yang paling kerja keras."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Subhanallah! Transparansi dalam mengelola dana adalah tanda kepribadian yang bisa dipercaya.",
+    successHadith:"'Dan janganlah kamu memakan harta di antara kamu dengan jalan yang batil.' (QS. Al-Baqarah: 188)",
+    failMsg:"Menggunakan dana milik bersama tanpa izin, meski dalam jumlah kecil, adalah tindakan tidak amanah.",
+  },
+  { qid:"s1u3q7", bot:"Kamu dititipkan jaga rumah sendirian akhir pekan dan dilarang orang tua memasukkan orang lain. Teman-temanmu memaksa ingin numpang nongkrong di rumahmu. Apa tindakanmu?",
+    choices:[{id:"A",text:"Izinkan masuk karena kamu yang punya rumah, asal tidak berantakan."},{id:"B",text:"Menolak dengan tegas dan sopan demi memegang amanah orang tua."},{id:"C",text:"Biarkan mereka nongkrong di teras sampai larut malam."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Mantap! Menjaga amanah orang tua bahkan saat mereka tidak di rumah adalah kesetiaan yang sesungguhnya.",
+    successHadith:"'Barangsiapa yang kamu percayai (dititipi), maka tunaikanlah amanahnya.' (HR. Tirmidzi)",
+    failMsg:"Melanggar larangan orang tua di rumah mereka sendiri adalah bentuk pengkhianatan amanah yang serius.",
+  },
+  { qid:"s1u3q8", bot:"Kamu sudah berjanji datang kerja kelompok jam 4 sore. Tapi jam 3.30, film kesayanganmu baru mulai tayang di TV. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Nonton dulu sampai selesai baru berangkat, sehingga terlambat satu jam."},{id:"B",text:"Tetap berangkat tepat waktu sesuai janji demi menghormati teman-teman."},{id:"C",text:"Batalkan sepihak lewat WhatsApp dengan alasan mendadak sakit."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Bravo! Menepati janji bahkan saat ada godaan besar adalah tanda iman yang kuat.",
+    successHadith:"'Tanda-tanda orang munafik ada tiga: bila berbicara ia berdusta, bila berjanji ia ingkar, dan bila diberi amanah ia berkhianat.' (HR. Bukhari)",
+    failMsg:"Mengorbankan janji demi hiburan pribadi menunjukkan bahwa kata-katamu tidak bisa dipegang.",
+  },
+  { qid:"s1u3q9", bot:"Kamu menemukan flashdisk berisi file tugas kelulusan penting milik kakak kelas tertinggal di lab komputer. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Hapus semua isinya untuk dijadikan flashdisk pribadimu."},{id:"B",text:"Periksa nama file untuk identifikasi pemilik, cari orangnya, lalu kembalikan."},{id:"C",text:"Biarkan saja tergeletak di sana, nanti juga ada yang mengurus."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Luar biasa! Berusaha aktif mengembalikan barang temuan kepada pemiliknya adalah kemuliaan akhlak.",
+    successHadith:"'Barangsiapa yang menemukan barang temuan, hendaklah ia mengumumkannya selama setahun.' (HR. Muslim) — berusaha mengembalikan ke pemiliknya adalah kewajiban.",
+    failMsg:"Mengambil alih atau membiarkan barang penting orang lain adalah pengabaian amanah yang merugikan.",
+  },
+  { qid:"s1u3q10", bot:"Kamu mendapat bantuan beasiswa uang tunai dari sekolah yang khusus diberikan untuk membeli buku pelajaran. Kamu ingin membeli skin game favoritmu. Apa yang kamu lakukan?",
+    choices:[{id:"A",text:"Pakai sebagian uang beasiswa untuk top-up game — sisanya baru beli buku."},{id:"B",text:"Gunakan seluruh dana beasiswa tepat sasaran hanya untuk keperluan sekolah."},{id:"C",text:"Minta orang tua untuk membelikan skin game sebagai hadiah terpisah."}],
+    correct:"B", concept:"Amanah",
+    successMsg:"Masya Allah! Menggunakan amanah dana tepat sasaran menunjukkan integritas dan kejujuran yang tinggi.",
+    successHadith:"'Sesungguhnya orang-orang yang khianat dalam amanah akan membawa amanahnya di leher mereka pada hari kiamat.' (HR. Bukhari & Muslim)",
+    failMsg:"Menyalahgunakan dana yang diberikan untuk tujuan tertentu adalah pengkhianatan kepercayaan institusi.",
+  },
+];
+const SECTION_DATA = {
+  1: {
+    label: "Bagian 1",
+    title: "Fondasi Akhlak Mulia",
+    emoji: "🌱",
+    bannerColor: "#00c8a0",
+    bannerColorDk: "#00a882",
+    trophy: "🥇",
+    trophyLabel: "Piala Karakter 1",
+    nodes: [
+      { id:"s1n1", icon:"💡", color:"#00c8a0", title:"Jujur di Dunia Nyata",
+        concept:"Shidq (Kejujuran)", points:200,
+        questions: S1_UNIT1_QUESTIONS,
+        unit:"Unit 1",
+      },
+      { id:"s1n2", icon:"🤲", color:"#0891d4", title:"Adab kepada Orang Tua",
+        concept:"Birrul Walidain", points:200,
+        questions: S1_UNIT2_QUESTIONS,
+        unit:"Unit 2",
+      },
+      { id:"s1n3", icon:"🔐", color:"#1cb0f6", title:"Menjaga Amanah",
+        concept:"Amanah", points:200,
+        questions: S1_UNIT3_QUESTIONS,
+        unit:"Unit 3",
+      },
+    ],
+  },
+  2: {
+    label: "Bagian 2",
+    title: "Menguasai Adab di Dunia Maya",
+    emoji: "🌐",
+    bannerColor: "#1cb0f6",
+    bannerColorDk: "#0891d4",
+    trophy: "🏆",
+    trophyLabel: "Piala Akhlaq Digital",
+    nodes: QUIZZES.map((q,i) => ({ ...q, id: `s2n${q.id}` })),
+  },
+  3: {
+    label: "Bagian 3",
+    title: "Filantropi & Kepedulian Sosial Digital",
+    emoji: "💚",
+    bannerColor: "#58cc02",
+    bannerColorDk: "#46a302",
+    trophy: "🌟",
+    trophyLabel: "Piala Karakter 3",
+    nodes: [
+      { id:"s3n1", icon:"🤑", color:"#58cc02", title:"Sedekah Digital",
+        bot:"Kamu punya 50.000 rupiah hasil nabung. Kamu melihat kampanye donasi online terpercaya untuk korban bencana. Temanmu mengajak jajan. Pilihanmu?",
+        choices:[
+          {id:"A",text:"Habiskan semua untuk jajan karena sudah lama menabung.",type:"bad"},
+          {id:"B",text:"Tidak peduli kampanye donasi karena tidak kenal korbannya.",type:"mid"},
+          {id:"C",text:"Menyisihkan sebagian untuk donasi lalu jajan secukupnya.",type:"best"},
+        ], correct:"C", concept:"Sadaqah Digital", points:20,
+        successHadith:"Rasulullah SAW: 'Sedekah tidak akan mengurangi harta.' (HR. Muslim). Bahkan sedekah digital kecil bernilai besar di sisi Allah.",
+        failMsg:"Menutup mata dari penderitaan orang lain bertentangan dengan nilai kepedulian Islam.",
+        unit:"Unit 1",
+      },
+      { id:"s3n2", icon:"📢", color:"#00c8a0", title:"Kampanye Kebaikan",
+        bot:"Kamu melihat isu lingkungan sekolahmu sangat buruk. Kamu bisa membuat konten edukasi di medsos. Tapi butuh waktu ekstra. Tindakanmu?",
+        choices:[
+          {id:"A",text:"Tidak melakukan apa-apa karena bukan tanggung jawabmu.",type:"bad"},
+          {id:"B",text:"Repost konten orang lain saja tanpa usaha membuat konten sendiri.",type:"mid"},
+          {id:"C",text:"Membuat konten edukatif sendiri yang informatif dan mengajak partisipasi teman-teman.",type:"best"},
+        ], correct:"C", concept:"Amar Ma'ruf Digital", points:20,
+        successHadith:"QS. Ali Imran 3:110 — 'Kamu adalah umat terbaik yang dilahirkan untuk manusia, karena menyuruh berbuat yang makruf...'",
+        failMsg:"Diam terhadap keburukan padahal mampu berbuat adalah kelalaian dalam amar ma'ruf.",
+        unit:"Unit 2",
+      },
+      { id:"s3n3", icon:"🕊️", color:"#46a302", title:"Toleransi di Kolom Komentar",
+        bot:"Di kolom komentar postingan sekolah, seorang teman berkomentar merendahkan teman lain yang berbeda suku. Banyak yang like komentarnya. Apa yang kamu lakukan?",
+        choices:[
+          {id:"A",text:"Ikut like karena mayoritas melakukannya.",type:"bad"},
+          {id:"B",text:"Diam saja karena tidak mau terlibat konflik.",type:"mid"},
+          {id:"C",text:"Membalas dengan komentar yang meluruskan dan mengajak menghormati perbedaan.",type:"best"},
+        ], correct:"C", concept:"Tasamuh (Toleransi)", points:20,
+        successHadith:"QS. Al-Hujurat 49:13 — 'Kami jadikan kamu berbangsa-bangsa dan bersuku-suku agar kamu saling mengenal.'",
+        failMsg:"Membiarkan diskriminasi di ruang digital sama dengan menyetujuinya secara tidak langsung.",
+        unit:"Unit 3",
+      },
+    ],
+  },
+};
+// ─── SECTION SWITCHER DROPDOWN ────────────────────────────────
+const SectionSwitcher = ({ current, onChange, sectionDone }) => {
+  const [open, setOpen] = useState(false);
+  const sec = SECTION_DATA[current];
+  const LOCK_COLOR = "#bbb";
+  const statusIcon = (id) => {
+    if (sectionDone[id]) return "✅";
+    if (id === current) return "📍";
+    return "🔒";
+  };
+  return (
+    <div style={{ margin:"10px 14px 0", position:"relative", zIndex:50 }}>
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between",
+          background: open
+            ? `linear-gradient(135deg,${sec.bannerColor},${sec.bannerColorDk})`
+            : `linear-gradient(135deg,${sec.bannerColor}dd,${sec.bannerColorDk}dd)`,
+          border:"none", borderRadius:14, padding:"11px 16px", cursor:"pointer",
+          boxShadow: open ? `0 6px 20px ${sec.bannerColor}55` : `0 3px 12px ${sec.bannerColor}33`,
+          transition:"all .3s ease",
+        }}
+      >
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{
+            width:34, height:34, borderRadius:10,
+            background:"rgba(255,255,255,.22)",
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
+          }}>{sec.emoji}</div>
+          <div style={{ textAlign:"left" }}>
+            <div style={{ fontSize:9, fontWeight:800, color:"rgba(255,255,255,.75)",
+              fontFamily:"'Nunito',sans-serif", letterSpacing:1.2, textTransform:"uppercase" }}>
+              {sec.label} yang Aktif
+            </div>
+            <div style={{ fontSize:14, fontWeight:900, color:"#fff",
+              fontFamily:"'Nunito',sans-serif" }}>
+              {sec.title}
+            </div>
+          </div>
+        </div>
+        <div style={{
+          width:28, height:28, borderRadius:8,
+          background:"rgba(255,255,255,.2)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          transition:"transform .25s ease",
+          transform: open ? "rotate(180deg)" : "rotate(0deg)",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </button>
+      {/* Dropdown panel */}
+      {open && (
+        <div style={{
+          position:"absolute", top:"calc(100% + 6px)", left:0, right:0,
+          background:"#fff", borderRadius:16, overflow:"hidden",
+          boxShadow:"0 12px 40px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.1)",
+          border:`1px solid ${C.border}`,
+          animation:"slideDown .2s ease",
+        }}>
+          {[1,2,3].map(id => {
+            const s = SECTION_DATA[id];
+            const isActive = id === current;
+            return (
+              <button
+                key={id}
+                onClick={() => { onChange(id); setOpen(false); }}
+                style={{
+                  width:"100%", display:"flex", alignItems:"center", gap:12,
+                  padding:"13px 16px", border:"none", cursor:"pointer",
+                  background: isActive ? `${s.bannerColor}18` : "#fff",
+                  borderBottom: id < 3 ? `1px solid ${C.border}` : "none",
+                  transition:"background .15s",
+                }}
+                onMouseEnter={e => !isActive && (e.currentTarget.style.background = C.surface)}
+                onMouseLeave={e => !isActive && (e.currentTarget.style.background = "#fff")}
+              >
+                <div style={{
+                  width:40, height:40, borderRadius:12, flexShrink:0,
+                  background: isActive
+                    ? `linear-gradient(135deg,${s.bannerColor},${s.bannerColorDk})`
+                    : `${s.bannerColor}22`,
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:20,
+                  boxShadow: isActive ? `0 4px 12px ${s.bannerColor}55` : "none",
+                }}>{s.emoji}</div>
+                <div style={{ flex:1, textAlign:"left" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                    <span style={{ fontWeight:900, fontSize:13, color: isActive ? s.bannerColor : C.ink,
+                      fontFamily:"'Nunito',sans-serif" }}>{s.label}</span>
+                    {isActive && (
+                      <span style={{ background:s.bannerColor, color:"#fff", fontSize:9,
+                        fontWeight:900, fontFamily:"'Nunito',sans-serif",
+                        borderRadius:6, padding:"1px 7px" }}>AKTIF</span>
+                    )}
+                  </div>
+                  <div style={{ fontWeight:700, fontSize:11, color:C.ink2,
+                    fontFamily:"'Nunito',sans-serif", marginTop:1 }}>{s.title}</div>
+                  <div style={{ fontWeight:700, fontSize:10, color:C.muted,
+                    fontFamily:"'Nunito',sans-serif", marginTop:1 }}>
+                    {s.nodes.length} unit · {s.nodes.length * 20} AP
+                  </div>
+                </div>
+                <div style={{ fontSize:18 }}>{statusIcon(id)}</div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+const StudentDashboard = ({ onSwitch }) => {
+  const [hearts, setHearts] = useState(5);
+  const [gems, setGems] = useState(120);
+  const [streak] = useState(12);
+  const [currentSection, setCurrentSection] = useState(2);
+  const [sectionNodeStates, setSectionNodeStates] = useState({
+    1: ["active","locked","locked"],
+    2: QUIZZES.map((_,i) => i===0 ? "active" : "locked"),
+    3: ["active","locked","locked"],
+  });
+  const [sectionDone, setSectionDone] = useState({ 1:false, 2:false, 3:false });
+  // activeQuiz: { secId, nodeIdx, questionIdx }
+  const [activeQuiz, setActiveQuiz] = useState(null);
+  const [quizState, setQuizState] = useState({ selected:null, revealed:false });
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastShow, setToastShow] = useState(false);
+  const [modal, setModal] = useState(null);
+  const [journalText, setJournalText] = useState("");
+  const [journalSaved, setJournalSaved] = useState(false);
+  // Recovery states
+  const [recoveryTime, setRecoveryTime] = useState(null);
+  const [timeLeft, setTimeLeft] = useState("");
+  const ff = "'Nunito',sans-serif";
+  const sec = SECTION_DATA[currentSection];
+  const nodeStates = sectionNodeStates[currentSection];
+  const toast = (msg) => { setToastMsg(msg); setToastShow(true); setTimeout(() => setToastShow(false), 2200); };
+  // Restore state on mount
+  useEffect(() => {
+    const storedRecovery = localStorage.getItem("akhlaqverse_recovery_timestamp");
+    if (storedRecovery) {
+      const remaining = parseInt(storedRecovery, 10) - Date.now();
+      if (remaining > 0) {
+        setRecoveryTime(parseInt(storedRecovery, 10));
+        setHearts(0);
+      } else {
+        localStorage.removeItem("akhlaqverse_recovery_timestamp");
+        setHearts(5);
+      }
+    }
+  }, []);
+  // Timer interval for recovery
+  useEffect(() => {
+    if (!recoveryTime) return;
+    const interval = setInterval(() => {
+      const remaining = recoveryTime - Date.now();
+      if (remaining <= 0) {
+        setHearts(5);
+        setRecoveryTime(null);
+        localStorage.removeItem("akhlaqverse_recovery_timestamp");
+        toast("💖 Nyawa kamu telah pulih! Mulai belajar lagi.");
+        clearInterval(interval);
+      } else {
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        setTimeLeft(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [recoveryTime]);
+  // Resolve current question: if node has questions[] use it, else treat node itself as 1-question
+  const getQuestion = (secId, nodeIdx, qIdx) => {
+    const node = SECTION_DATA[secId].nodes[nodeIdx];
+    if (node.questions) return node.questions[qIdx];
+    return node; // legacy single-question node
+  };
+  const getTotalQuestions = (secId, nodeIdx) => {
+    const node = SECTION_DATA[secId].nodes[nodeIdx];
+    return node.questions ? node.questions.length : 1;
+  };
+  const openQuiz = (secId, nodeIdx) => {
+    if (hearts === 0) {
+      toast("💔 Nyawa kamu habis! Lakukan Refleksi Mandiri atau tunggu timer.");
+      return;
+    }
+    const ns = sectionNodeStates[secId];
+    if (ns[nodeIdx] === "locked") { toast("🔒 Selesaikan unit sebelumnya dulu!"); return; }
+    if (ns[nodeIdx] === "done")   { toast("✅ Unit ini sudah selesai!"); return; }
+    setActiveQuiz({ secId, nodeIdx, questionIdx:0 });
+    setQuizState({ selected:null, revealed:false });
+  };
+  const confirmAnswer = () => {
+    if (!quizState.selected) return;
+    setQuizState(s => ({ ...s, revealed:true }));
+  };
+  const nextAfterAnswer = () => {
+    const { secId, nodeIdx, questionIdx } = activeQuiz;
+    const nodes = SECTION_DATA[secId].nodes;
+    const totalQ = getTotalQuestions(secId, nodeIdx);
+    const q = getQuestion(secId, nodeIdx, questionIdx);
+    const isCorrect = quizState.selected === q.correct;
+    if (!isCorrect) {
+      const nh = Math.max(0, hearts - 1);
+      setHearts(nh);
+      if (nh === 0) { toast("💔 Hearts habis! Istirahat dulu."); setTimeout(() => setHearts(5), 3000); }
+      setQuizState({ selected:null, revealed:false });
+      if (nh === 0) {
+        const recTime = Date.now() + 5 * 60 * 1000;
+        setRecoveryTime(recTime);
+        localStorage.setItem("akhlaqverse_recovery_timestamp", String(recTime));
+        setActiveQuiz(null); // Keluar kuis otomatis
+        toast("💔 Nyawa kamu habis! Dialihkan ke Home.");
+      } else {
+        setQuizState({ selected:null, revealed:false });
+      }
+      return;
+    }
+    // Correct — award per-question gems
+    const node = nodes[nodeIdx];
+    const perQPoints = Math.round((node.points || 20) / totalQ);
+    setGems(g => g + perQPoints);
+    const nextQ = questionIdx + 1;
+    if (nextQ < totalQ) {
+      // Move to next question in this node
+      setActiveQuiz({ secId, nodeIdx, questionIdx: nextQ });
+      setQuizState({ selected:null, revealed:false });
+    } else {
+      // All questions done — unlock next node
+      const ns = { ...sectionNodeStates };
+      const arr = [...ns[secId]];
+      arr[nodeIdx] = "done";
+      if (nodeIdx + 1 < nodes.length) arr[nodeIdx + 1] = "active";
+      ns[secId] = arr;
+      setSectionNodeStates(ns);
+      if (arr.every(s => s === "done")) {
+        setSectionDone(prev => ({ ...prev, [secId]:true }));
+      }
+      setActiveQuiz(null);
+    }
+  };
+  const saveJournal = () => { setJournalSaved(true); toast("📝 Jurnal berhasil dikirim ke Guru!"); };
+  const handleSectionChange = (id) => {
+    setCurrentSection(id);
+    setActiveQuiz(null);
+  };
+  // ── SECTION DONE SCREEN ──
+  if (sectionDone[currentSection]) {
+    const sd = SECTION_DATA[currentSection];
+    return (
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+        flex:1, minHeight:0, overflowY:"auto", padding:32, textAlign:"center", background:C.white }}>
+        <div style={{ fontSize:72, marginBottom:10, animation:"popIn .6s ease" }}>{sd.trophy}</div>
+        <h1 style={{ fontWeight:900, fontSize:24, color:C.ink, fontFamily:ff, marginBottom:6 }}>
+          {sd.label} Selesai!
+        </h1>
+        <div style={{ background:`${sd.bannerColor}18`, borderRadius:12, padding:"8px 18px",
+          marginBottom:16, border:`2px solid ${sd.bannerColor}44` }}>
+          <span style={{ fontWeight:800, fontSize:13, color:sd.bannerColor, fontFamily:ff }}>{sd.title}</span>
+        </div>
+        <p style={{ fontWeight:700, fontSize:14, color:C.ink2, fontFamily:ff, lineHeight:1.6,
+          marginBottom:24, maxWidth:280 }}>
+          Kamu berhasil menguasai semua unit di bagian ini. Lanjutkan ke bagian berikutnya!
+        </p>
+        <div style={{ background:`linear-gradient(135deg,${sd.bannerColor},${sd.bannerColorDk})`,
+          borderRadius:20, padding:"14px 28px", marginBottom:24,
+          boxShadow:`0 8px 24px ${sd.bannerColor}55` }}>
+          <div style={{ fontWeight:900, fontSize:28, color:"#fff", fontFamily:ff }}>💎 {gems} AP</div>
+          <div style={{ fontWeight:700, fontSize:12, color:"rgba(255,255,255,.85)", fontFamily:ff }}>Total Akhlaq Points</div>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:10, width:"100%" }}>
+          <button onClick={() => setSectionDone(prev => ({ ...prev, [currentSection]:false }))}
+            style={{ background:`linear-gradient(135deg,${sd.bannerColor},${sd.bannerColorDk})`,
+              border:"none", borderRadius:14, padding:"13px 0", fontWeight:900, fontSize:15,
+              fontFamily:ff, color:"#fff", cursor:"pointer",
+              boxShadow:`0 6px 20px ${sd.bannerColor}44` }}>
+            Ulangi {sd.label}
+          </button>
+          {currentSection < 3 && (
+            <button onClick={() => { setSectionDone(prev => ({ ...prev, [currentSection]:false })); handleSectionChange(currentSection + 1); }}
+              style={{ background:`linear-gradient(135deg,${C.green},${C.greenDk})`, border:"none",
+                borderRadius:14, padding:"13px 0", fontWeight:900, fontSize:15, fontFamily:ff,
+                color:"#fff", cursor:"pointer", boxShadow:`0 6px 20px ${C.green}44` }}>
+              Lanjut ke Bagian {currentSection + 1} →
+            </button>
+          )}
+          <button onClick={() => onSwitch("select")}
+            style={{ background:"none", border:`2px solid ${C.border}`, borderRadius:14,
+              padding:"10px 0", fontWeight:800, fontSize:14, fontFamily:ff,
+              color:C.ink2, cursor:"pointer" }}>
+            Kembali ke Menu
+          </button>
+        </div>
+      </div>
+    );
+  }
+  // ── QUIZ SCREEN ──
+  if (activeQuiz !== null) {
+    const { secId, nodeIdx, questionIdx } = activeQuiz;
+    const node = SECTION_DATA[secId].nodes[nodeIdx];
+    const totalQ = getTotalQuestions(secId, nodeIdx);
+    const q = getQuestion(secId, nodeIdx, questionIdx);
+    const { selected, revealed } = quizState;
+    const correct = selected === q.correct;
+    const nodeColor = node.color || C.blue;
+    const nodeIcon  = node.icon  || "📝";
+    const nodeConcept = q.concept || node.concept || "";
+    const nodeUnit    = node.unit  || "";
+    // progress: per-question within the node
+    const progressPct = ((questionIdx + (revealed && correct ? 1 : 0)) / totalQ) * 100;
+    return (
+      <div style={{ display:"flex", flexDirection:"column", flex:1, minHeight:0, background:C.white, overflow:"hidden", position:"relative" }}>
+        <Toast msg={toastMsg} show={toastShow}/>
+        {/* ── HEADER ── */}
+        <div style={{ padding:"12px 16px", borderBottom:`2px solid ${C.border}`,
+          background:C.white, flexShrink:0 }}>
+          {/* top row: close + hearts */}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+            <button onClick={() => setActiveQuiz(null)}
+              style={{ background:"none", border:"none", fontSize:20, cursor:"pointer",
+                color:C.muted, lineHeight:1, padding:0 }}>✕</button>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ fontWeight:700, fontSize:11, color:C.muted, fontFamily:ff }}>
+                {nodeUnit} · {nodeConcept}
+              </span>
+              <div style={{ width:1, height:14, background:C.border }}/>
+              <div style={{ display:"flex", gap:2 }}>
+                {Array.from({length:5}).map((_,i) => (
+                  <span key={i} style={{ fontSize:15, opacity:i<hearts?1:.2,
+                    transition:"opacity .3s", filter:i<hearts?"none":"grayscale(1)" }}>❤️</span>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* progress bar with step counter */}
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ flex:1, height:12, background:"#f0f0f0", borderRadius:10,
+              overflow:"hidden", position:"relative",
+              boxShadow:"inset 0 2px 4px rgba(0,0,0,.08)" }}>
+              <div style={{ position:"absolute", inset:0, display:"flex" }}>
+                {Array.from({length:totalQ}).map((_,i) => (
+                  <div key={i} style={{
+                    flex:1, height:"100%",
+                    borderRight: i < totalQ-1 ? "2px solid rgba(255,255,255,.6)" : "none",
+                    background: i < questionIdx + (revealed && correct ? 1 : 0)
+                      ? `linear-gradient(90deg,${nodeColor},${nodeColor}cc)`
+                      : "transparent",
+                    transition:"background .4s ease",
+                  }}/>
+                ))}
+              </div>
+            </div>
+            <div style={{ fontWeight:900, fontSize:13, color:nodeColor, fontFamily:ff,
+              minWidth:42, textAlign:"right" }}>
+              {questionIdx + 1}/{totalQ}
+            </div>
+          </div>
+        </div>
+        {/* ── BODY ── */}
+        <div style={{ flex:1, minHeight:0, overflowY:"auto", overflowX:"hidden", padding:"14px 16px" }}>
+          {/* unit badge */}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:6,
+            background:`${nodeColor}15`, borderRadius:20, padding:"5px 13px", marginBottom:14,
+            border:`1.5px solid ${nodeColor}30` }}>
+            <span style={{ fontSize:14 }}>{nodeIcon}</span>
+            <span style={{ fontWeight:800, fontSize:11, color:nodeColor, fontFamily:ff, letterSpacing:.8 }}>
+              {node.title}
+            </span>
+          </div>
+          {/* question counter pill */}
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+            <div style={{ background:nodeColor, borderRadius:10, padding:"3px 10px",
+              fontWeight:900, fontSize:11, color:"#fff", fontFamily:ff }}>
+              Soal {questionIdx + 1} dari {totalQ}
+            </div>
+            {revealed && correct && (
+              <div style={{ background:C.greenBg, borderRadius:10, padding:"3px 10px",
+                fontWeight:800, fontSize:11, color:C.greenDk, fontFamily:ff,
+                animation:"popIn .3s ease" }}>
+                ✅ Benar!
+              </div>
+            )}
+            {revealed && !correct && (
+              <div style={{ background:C.redBg, borderRadius:10, padding:"3px 10px",
+                fontWeight:800, fontSize:11, color:C.redDk, fontFamily:ff,
+                animation:"popIn .3s ease" }}>
+                ❌ Coba lagi
+              </div>
+            )}
+          </div>
+          {/* bot bubble */}
+          <div style={{ display:"flex", gap:10, marginBottom:16 }}>
+            <div style={{ width:46, height:46, borderRadius:14, flexShrink:0, fontSize:22,
+              background:`linear-gradient(135deg,${nodeColor},${nodeColor}88)`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              boxShadow:`0 4px 12px ${nodeColor}44` }}>🦉</div>
+            <div style={{ background:C.surface, borderRadius:"4px 16px 16px 16px",
+              padding:"12px 13px", flex:1,
+              border:`1.5px solid ${C.border}` }}>
+              <p style={{ fontWeight:700, fontSize:13, color:C.ink, fontFamily:ff,
+                lineHeight:1.6, margin:0 }}>{q.bot}</p>
+            </div>
+          </div>
+          {/* choices */}
+          <div style={{ fontWeight:900, fontSize:14, color:C.ink2, fontFamily:ff, marginBottom:10 }}>
+            🤔 Pilih tindakanmu:
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+            {q.choices.map(ch => {
+              const isSel = selected === ch.id;
+              const isCorrectChoice = ch.id === q.correct;
+              const selectedIsCorrect = selected === q.correct;
+              let bg = C.white, bdColor = C.border, tc = C.ink, badgeBg = "#eee";
+              if (isSel && !revealed)   { bg="#e8f4ff"; bdColor=nodeColor; badgeBg=nodeColor; }
+              if (revealed && isCorrectChoice) { bg=C.greenBg; bdColor=C.green; tc=C.greenDk; badgeBg=C.green; }
+              if (revealed && isSel && !isCorrectChoice) { bg=C.redBg; bdColor=C.red; tc=C.redDk; badgeBg=C.red; }
+              
+              if (isSel && !revealed) {
+                bg = "#e8f4ff";
+                bdColor = nodeColor;
+                badgeBg = nodeColor;
+              }
+              if (revealed) {
+                if (selectedIsCorrect) {
+                  if (isCorrectChoice) {
+                    bg = C.greenBg;
+                    bdColor = C.green;
+                    tc = C.greenDk;
+                    badgeBg = C.green;
+                  }
+                } else {
+                  if (isSel) {
+                    bg = C.redBg;
+                    bdColor = C.red;
+                    tc = C.redDk;
+                    badgeBg = C.red;
+                  }
+                }
+              }
+              return (
+                <div key={ch.id}
+                  onClick={() => !revealed && setQuizState(s => ({ ...s, selected:ch.id }))}
+                  style={{ background:bg, border:`2px solid ${bdColor}`,
+                    borderRadius:14, padding:"12px 13px",
+                    display:"flex", alignItems:"flex-start", gap:11,
+                    cursor: revealed ? "default" : "pointer",
+                    transition:"all .2s ease",
+                    transform: isSel && !revealed ? "scale(1.015)" : "scale(1)",
+                    boxShadow: isSel && !revealed ? `0 4px 14px ${nodeColor}33` : "none" }}>
+                  <div style={{ width:30, height:30, borderRadius:8, flexShrink:0,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontWeight:900, fontSize:12, color:"#fff", fontFamily:ff,
+                    background:badgeBg, transition:"background .2s",
+                    marginTop:1 }}>
+                    {ch.id}
+                  </div>
+                  <span style={{ fontWeight:700, fontSize:13, color:tc, fontFamily:ff,
+                    lineHeight:1.45, paddingTop:2 }}>
+                    {ch.text}
+                  </span>
+                  {revealed && isCorrectChoice && (
+                  {revealed && selectedIsCorrect && isCorrectChoice && (
+                    <span style={{ marginLeft:"auto", fontSize:16, flexShrink:0 }}>✅</span>
+                  )}
+                  {revealed && isSel && !isCorrectChoice && (
+                  {revealed && !selectedIsCorrect && isSel && (
+                    <span style={{ marginLeft:"auto", fontSize:16, flexShrink:0 }}>❌</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {/* padding so content clears the feedback banner */}
+          <div style={{ height:160, flexShrink:0 }}/>
+        </div>
+        {/* ── FEEDBACK BANNER (slides up when revealed) ── */}
+        {revealed && (
+          <div style={{
+            position:"absolute", bottom:0, left:0, right:0,
+            background: correct
+              ? `linear-gradient(135deg,${C.green},${C.greenDk})`
+              : `linear-gradient(135deg,${C.red},${C.redDk})`,
+            borderRadius:"20px 20px 0 0",
+            padding:"16px 18px 24px",
+            animation:"slideUp .35s cubic-bezier(.34,1.3,.64,1)",
+            boxShadow:"0 -4px 24px rgba(0,0,0,.18)",
+            zIndex:10,
+          }}>
+            {/* concept badge */}
+            <div style={{ display:"inline-flex", alignItems:"center", gap:6,
+              background:"rgba(255,255,255,.2)", borderRadius:20, padding:"4px 12px",
+              marginBottom:10 }}>
+              <span style={{ fontSize:12 }}>{correct ? "🌟" : "📖"}</span>
+              <span style={{ fontWeight:800, fontSize:11, color:"#fff",
+                fontFamily:ff, letterSpacing:.8 }}>
+                Konsep: {nodeConcept}
+              </span>
+            </div>
+            {/* title */}
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+              <div style={{ width:36, height:36, borderRadius:"50%",
+                background:"rgba(255,255,255,.22)",
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
+                {correct ? "✨" : "💪"}
+              </div>
+              <div style={{ color:"#fff", fontWeight:900, fontSize:15, fontFamily:ff }}>
+                {correct
+                  ? `Akhlaqul Karimah! +${Math.round((node.points||20)/totalQ)} AP`
+                  : "Kurang tepat — coba lagi!"}
+              </div>
+            </div>
+            {/* hadith / explanation */}
+            <div style={{ background:"rgba(255,255,255,.16)", borderRadius:12,
+              padding:"10px 13px", marginBottom:14 }}>
+              <p style={{ color:"#fff", fontSize:12, fontFamily:ff, lineHeight:1.6, margin:0 }}>
+                {correct ? (q.successHadith || q.successMsg) : (q.failMsg)}
+              </p>
+            </div>
+            {/* action button */}
+            <button onClick={nextAfterAnswer}
+              style={{ width:"100%", background:"#fff", border:"none",
+                borderRadius:14, padding:"13px 0",
+                fontWeight:900, fontSize:15, fontFamily:ff,
+                color: correct ? C.greenDk : C.redDk,
+                cursor:"pointer",
+                boxShadow:"0 4px 12px rgba(0,0,0,.12)",
+                transition:"transform .1s ease" }}
+              onMouseDown={e => e.currentTarget.style.transform="scale(.98)"}
+              onMouseUp={e => e.currentTarget.style.transform="scale(1)"}>
+              {correct
+                ? (questionIdx + 1 < totalQ ? `Soal Berikutnya →` : "🎉 Selesaikan Unit!")
+                : "Ulangi Soal Ini 🔄"}
+            </button>
+          </div>
+        )}
+        {/* ── CONFIRM BUTTON (only when not revealed) ── */}
+        {!revealed && (
+          <div style={{ padding:"12px 16px 20px", background:C.white, flexShrink:0,
+            borderTop:`2px solid ${C.border}`, position:"relative", zIndex:20 }}>
+            <button onClick={confirmAnswer} disabled={!selected}
+              style={{ position:"relative", width:"100%", border:"none",
+                borderRadius:14, padding:"15px 0",
+                fontWeight:900, fontSize:16, fontFamily:ff,
+                background: selected
+                  ? `linear-gradient(135deg,${nodeColor},${nodeColor}cc)`
+                  : "#e8e8e8",
+                color: selected ? "#fff" : C.muted,
+                cursor: selected ? "pointer" : "default",
+                transition:"all .2s ease",
+                boxShadow: selected
+                  ? `0 0 0 2px ${nodeColor}88, 0 5px 0 ${nodeColor}88`
+                  : "none",
+                transform:"translateY(0)" }}
+              onMouseDown={e => selected && (e.currentTarget.style.transform="translateY(3px)")}
+              onMouseUp={e => selected && (e.currentTarget.style.transform="translateY(0)")}>
+              ✔ Konfirmasi Pilihan
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+  // ── HOME SCREEN ──
+  return (
+    <div style={{ display:"flex", flexDirection:"column", flex:1, minHeight:0, background:C.white, overflow:"hidden" }}>
+      <Toast msg={toastMsg} show={toastShow}/>
+      {/* ── TOP STATS BAR ── */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+        padding:"10px 16px", borderBottom:`2px solid ${C.border}`,
+        position:"sticky", top:0, zIndex:100, background:C.white }}>
+        <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+          <span style={{ fontSize:18 }}>🔥</span>
+          <span style={{ fontWeight:900, fontSize:16, color:C.gold, fontFamily:ff }}>{streak}</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+          <span style={{ fontSize:16 }}>💎</span>
+          <span style={{ fontWeight:900, fontSize:16, color:C.blue, fontFamily:ff }}>{gems}</span>
+        </div>
+        <div style={{ display:"flex", gap:3 }}>
+          {Array.from({length:5}).map((_,i) => (
+            <span key={i} style={{ fontSize:16, opacity:i<hearts?1:.25 }}>❤️</span>
+          ))}
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:4,
+          background:`linear-gradient(135deg,${C.red},${C.redDk})`,
+          borderRadius:16, padding:"4px 10px" }}>
+          <span style={{ fontSize:12 }}>⚡</span>
+          <span style={{ fontWeight:900, fontSize:13, color:"#fff", fontFamily:ff }}>25</span>
+        </div>
+      </div>
+      {/* ── HEARTS RECOVERY BANNER ── */}
+      {hearts === 0 && (
+        <div style={{
+          margin: "12px 14px 2px",
+          padding: "14px 16px",
+          background: "linear-gradient(135deg, #ff4b4b, #cc0000)",
+          borderRadius: 18,
+          color: "#fff",
+          boxShadow: "0 8px 20px rgba(255,75,75,0.35)",
+          animation: "slideDown 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
+          position: "relative",
+          zIndex: 40
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
+            <span style={{ fontSize: 26 }}>💔</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontWeight: 900, fontSize: 14, fontFamily: ff }}>Nyawa Kamu Habis!</div>
+              <div style={{ fontWeight: 700, fontSize: 11, color: "rgba(255,255,255,0.8)", fontFamily: ff, lineHeight: 1.3 }}>
+                Sabar adalah bagian dari iman. Tunggu pemulihan:
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginTop: 2 }}>
+            <div style={{
+              background: "rgba(0,0,0,0.18)",
+              borderRadius: 10,
+              padding: "5px 12px",
+              fontWeight: 900,
+              fontSize: 15,
+              fontFamily: ff,
+              letterSpacing: 0.5
+            }}>
+              ⏱ {timeLeft || "05:00"}
+            </div>
+            <button
+              onClick={() => {
+                setHearts(5);
+                setRecoveryTime(null);
+                localStorage.removeItem("akhlaqverse_recovery_timestamp");
+                toast("💖 Nyawa pulih lewat Refleksi Mandiri!");
+              }}
+              style={{
+                background: "#fff",
+                border: "none",
+                borderRadius: 10,
+                padding: "6px 14px",
+                fontWeight: 900,
+                fontSize: 11,
+                fontFamily: ff,
+                color: C.redDk,
+                cursor: "pointer",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                transition: "transform 0.1s"
+              }}
+              onMouseDown={e => e.currentTarget.style.transform="scale(0.95)"}
+              onMouseUp={e => e.currentTarget.style.transform="scale(1)"}>
+              🧘‍♂️ Refleksi Mandiri (Bypass)
+            </button>
+          </div>
+        </div>
+      )}
+      {/* ── SECTION SWITCHER ── */}
+      <SectionSwitcher
+        current={currentSection}
+        onChange={handleSectionChange}
+        sectionDone={sectionDone}
+      />
+      {/* ── SECTION PROGRESS PILLS ── */}
+      <div style={{ display:"flex", gap:6, padding:"10px 14px 0" }}>
+        {[1,2,3].map(id => {
+          const s = SECTION_DATA[id];
+          const ns = sectionNodeStates[id];
+          const done = ns.filter(x => x==="done").length;
+          const total = s.nodes.length;
+          const pct = Math.round((done/total)*100);
+          const isActive = id === currentSection;
+          return (
+            <button key={id} onClick={() => handleSectionChange(id)}
+              style={{ flex:1, border: isActive ? `2px solid ${s.bannerColor}` : `2px solid ${C.border}`,
+                borderRadius:12, padding:"7px 6px", background: isActive ? `${s.bannerColor}12` : C.surface,
+                cursor:"pointer", transition:"all .2s" }}>
+              <div style={{ fontSize:14, marginBottom:2 }}>{s.emoji}</div>
+              <div style={{ fontWeight:900, fontSize:10, color: isActive ? s.bannerColor : C.muted,
+                fontFamily:ff, marginBottom:3 }}>{s.label}</div>
+              <div style={{ height:4, background:C.border, borderRadius:2, overflow:"hidden" }}>
+                <div style={{ width:`${pct}%`, height:"100%", background:s.bannerColor,
+                  borderRadius:2, transition:"width .5s" }}/>
+              </div>
+              <div style={{ fontWeight:700, fontSize:9, color:C.muted, fontFamily:ff, marginTop:2 }}>
+                {done}/{total}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {/* ── LEARNING PATH ── */}
+      <div style={{ flex:1, minHeight:0, overflowY:"auto", overflowX:"hidden",
+        padding:"22px 14px 36px",
+        display:"flex", flexDirection:"column", alignItems:"center", gap:30 }}>
+        {sec.nodes.map((q, idx) => {
+          const st = nodeStates[idx] || "locked";
+          const sz = st==="active" ? 70 : 62;
+          const bg = st==="done"
+            ? `linear-gradient(135deg,${C.green},${C.greenDk})`
+            : st==="active"
+            ? `linear-gradient(135deg,${q.color},${q.color}cc)`
+            : `linear-gradient(135deg,#e0e0e0,#ccc)`;
+          const sh = st==="done"
+            ? `0 6px 20px ${C.green}55`
+            : st==="active"
+            ? `0 6px 24px ${q.color}66`
+            : `0 3px 10px rgba(0,0,0,.1)`;
+          const xOff = XOFF[idx % XOFF.length];
+          return (
+            <div key={q.id} style={{ position:"relative", width:"100%", display:"flex", justifyContent:"center" }}>
+              {/* connector to next node */}
+              {idx < sec.nodes.length - 1 && (
+                <div style={{ position:"absolute", top:"50%", left:"50%", width:3, height:38,
+                  borderRadius:4, zIndex:0, opacity:.65,
+                  background: st==="done"
+                    ? `linear-gradient(to bottom,${C.green},${sec.bannerColor})`
+                    : "linear-gradient(to bottom,#ddd,#eee)",
+                  transform:`translateX(${xOff}px) translateX(-50%)` }}/>
+              )}
+              <div style={{ marginLeft:xOff, position:"relative", zIndex:1 }}>
+                {/* pulse ring for active */}
+                {st==="active" && (
+                  <div style={{ position:"absolute", width:sz+20, height:sz+20, borderRadius:"50%",
+                    background:`${q.color}20`, top:-10, left:-10,
+                    animation:"pulse 2s infinite", pointerEvents:"none" }}/>
+                )}
+                {/* node circle */}
+                <div
+                  onClick={() => openQuiz(currentSection, idx)}
+                  style={{ width:sz, height:sz, borderRadius:"50%",
+                    background:bg, boxShadow:sh,
+                    border: st==="done" ? `4px solid ${C.greenDk}` : st==="locked" ? "4px solid #bbb" : "none",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    cursor:"pointer", position:"relative", transition:"transform .15s" }}
+                  onMouseEnter={e => e.currentTarget.style.transform="scale(1.1)"}
+                  onMouseLeave={e => e.currentTarget.style.transform="scale(1)"}
+                >
+                  {/* shine */}
+                  <div style={{ position:"absolute", top:"10%", left:"20%", width:"28%", height:"18%",
+                    background:"rgba(255,255,255,.3)", borderRadius:"50%", transform:"rotate(-20deg)" }}/>
+                  {/* bottom shadow */}
+                  <div style={{ position:"absolute", bottom:0, left:"15%", right:"15%", height:"26%",
+                    background:"rgba(0,0,0,.15)", borderRadius:"0 0 50% 50%" }}/>
+                  <span style={{ fontSize: st==="active" ? 26 : 22 }}>
+                    {st==="locked" ? "🔒" : st==="done" ? "⭐" : q.icon}
+                  </span>
+                </div>
+                {/* label */}
+                <div style={{ marginTop:6, fontSize:10, fontWeight:800, textAlign:"center",
+                  maxWidth:78, fontFamily:ff,
+                  color: st==="locked" ? C.muted : C.ink2 }}>
+                  {q.title}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {/* Trophy node */}
+        <div style={{ textAlign:"center", paddingTop:4 }}>
+          <div style={{ width:60, height:60, borderRadius:"50%", margin:"0 auto 6px",
+            background: sectionDone[currentSection]
+              ? `linear-gradient(135deg,${sec.bannerColor},${sec.bannerColorDk})`
+              : "linear-gradient(135deg,#e8e8e8,#d0d0d0)",
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:28,
+            boxShadow: sectionDone[currentSection] ? `0 6px 20px ${sec.bannerColor}55` : "none",
+            animation: sectionDone[currentSection] ? "floatUp 3s ease-in-out infinite" : "none",
+            transition:"all .4s ease",
+          }}>
+            {sec.trophy}
+          </div>
+          <div style={{ fontSize:10, fontWeight:800, color:C.muted, fontFamily:ff }}>
+            {sec.trophyLabel}
+          </div>
+        </div>
+      </div>
+      {/* ── MODALS ── */}
+      <Modal open={modal==="journal"} onClose={() => setModal(null)} title="📝 Reflection Journal" color={C.teal}>
+        <p style={{ fontWeight:700, fontSize:13, color:C.ink2, fontFamily:ff, marginBottom:12, lineHeight:1.5 }}>
+          Ceritakan pengalaman akhlakmu hari ini. Guru akan membacanya! 🦉
+        </p>
+        {journalSaved ? (
+          <div style={{ background:C.greenBg, border:`2px solid ${C.green}`, borderRadius:14,
+            padding:16, textAlign:"center" }}>
+            <div style={{ fontSize:32 }}>✅</div>
+            <div style={{ fontWeight:900, fontSize:15, color:C.greenDk, fontFamily:ff, marginTop:6 }}>Jurnal Terkirim!</div>
+            <div style={{ fontWeight:700, fontSize:12, color:C.ink2, fontFamily:ff, marginTop:4 }}>Guru kamu akan membaca refleksimu segera.</div>
+          </div>
+        ) : (
+          <>
+            <textarea value={journalText} onChange={e => setJournalText(e.target.value)}
+              placeholder="Tuliskan refleksimu di sini..."
+              style={{ width:"100%", height:120, border:`2px solid ${C.border}`, borderRadius:12,
+                padding:12, fontFamily:ff, fontSize:13, fontWeight:700, color:C.ink,
+                resize:"none", outline:"none", boxSizing:"border-box" }}/>
+            <button onClick={saveJournal} disabled={!journalText.trim()}
+              style={{ width:"100%", marginTop:12,
+                background: journalText.trim() ? `linear-gradient(135deg,${C.teal},#00a882)` : C.border,
+                border:"none", borderRadius:12, padding:"13px 0", fontWeight:900, fontSize:15,
+                fontFamily:ff, color: journalText.trim() ? "#fff" : C.muted,
+                cursor: journalText.trim() ? "pointer" : "default" }}>
+              Kirim Jurnal
+            </button>
+          </>
+        )}
+      </Modal>
+      <Modal open={modal==="leaderboard"} onClose={() => setModal(null)} title="🏆 Papan Peringkat" color={C.gold}>
+        {[{n:"Rizky Ramadhan",g:420,s:18},{n:"Fatimah Az-Zahra",g:340,s:12},{n:"Kamu",g:gems,s:streak,me:true},{n:"Ahmad Fauzi",g:180,s:5}]
+          .sort((a,b) => b.g-a.g).map((p,i) => (
+          <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 0",
+            borderBottom:`1px solid ${C.border}` }}>
+            <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontWeight:900, fontSize:13, fontFamily:ff,
+              color: i<3 ? "#fff" : C.muted,
+              background: i===0 ? `linear-gradient(135deg,${C.gold},${C.goldDk})`
+                : i===1 ? "linear-gradient(135deg,#c0c0c0,#a0a0a0)"
+                : i===2 ? "linear-gradient(135deg,#cd7f32,#a0522d)"
+                : `linear-gradient(135deg,${C.surface},${C.border})` }}>
+              {i+1}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:900, fontSize:14, fontFamily:ff, color:p.me?C.blue:C.ink }}>
+                {p.n}{p.me?" (Kamu)":""}
+              </div>
+              <div style={{ fontWeight:700, fontSize:11, color:C.muted, fontFamily:ff }}>🔥 {p.s} streak</div>
+            </div>
+            <div style={{ fontWeight:900, fontSize:15, color:C.gold, fontFamily:ff }}>💎{p.g}</div>
+          </div>
+        ))}
+      </Modal>
+      <Modal open={modal==="profile"} onClose={() => setModal(null)} title="👤 Profil Akhlaq" color={C.purple}>
+        <div style={{ textAlign:"center", marginBottom:18 }}>
+          <div style={{ fontSize:52 }}>🧕</div>
+          <div style={{ fontWeight:900, fontSize:18, color:C.ink, fontFamily:ff }}>Fatimah Az-Zahra</div>
+          <div style={{ fontWeight:700, fontSize:12, color:C.muted, fontFamily:ff }}>Kelas 8A</div>
+        </div>
+        <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+          {[1,2,3].map(id => {
+            const s = SECTION_DATA[id];
+            const ns = sectionNodeStates[id];
+            const done = ns.filter(x=>x==="done").length;
+            return (
+              <div key={id} style={{ flex:1, background:sectionDone[id]?`${s.bannerColor}18`:C.surface,
+                border:`2px solid ${sectionDone[id]?s.bannerColor:C.border}`,
+                borderRadius:12, padding:"8px 6px", textAlign:"center" }}>
+                <div style={{ fontSize:16 }}>{s.emoji}</div>
+                <div style={{ fontWeight:900, fontSize:11, color:sectionDone[id]?s.bannerColor:C.ink2, fontFamily:ff }}>{s.label}</div>
+                <div style={{ fontWeight:700, fontSize:10, color:C.muted, fontFamily:ff }}>{done}/{s.nodes.length}</div>
+              </div>
+            );
+          })}
+        </div>
+        {[
+          {label:"Akhlaq Points", val:gems, icon:"💎", color:C.blue},
+          {label:"Streak Harian", val:`${streak} hari`, icon:"🔥", color:C.gold},
+          {label:"Bagian Selesai", val:`${Object.values(sectionDone).filter(Boolean).length}/3`, icon:"🏆", color:C.green},
+        ].map((item, i) => (
+          <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+            padding:"11px 14px", background:C.surface, borderRadius:12, marginBottom:8 }}>
+            <span style={{ fontWeight:700, fontSize:13, color:C.ink2, fontFamily:ff }}>{item.icon} {item.label}</span>
+            <span style={{ fontWeight:900, fontSize:15, color:item.color, fontFamily:ff }}>{item.val}</span>
+          </div>
+        ))}
+        <button onClick={() => { setModal(null); onSwitch("select"); }}
+          style={{ width:"100%", marginTop:8,
+            background:`linear-gradient(135deg,${C.red},${C.redDk})`,
+            border:"none", borderRadius:12, padding:"12px 0", fontWeight:900, fontSize:14,
+            fontFamily:ff, color:"#fff", cursor:"pointer" }}>
+          Keluar / Ganti Peran
+        </button>
+      </Modal>
+      {/* ── BOTTOM NAV ── */}
+      <div style={{ borderTop:`2px solid ${C.border}`, display:"flex", justifyContent:"space-around",
+        padding:"8px 0 12px", background:C.white, flexShrink:0, position:"relative", zIndex:50 }}>
+        {[
+          { ic:"🏠", lb:"Home",    act:true,  fn:()=>{} },
+          { ic:"📝", lb:"Jurnal",  act:false, fn:()=>setModal("journal") },
+          { ic:"🏆", lb:"Ranking", act:false, fn:()=>setModal("leaderboard") },
+          { ic:"👤", lb:"Profil",  act:false, fn:()=>setModal("profile") },
+        ].map((item, i) => (
+          <button key={i} onClick={item.fn}
+            style={{ background: item.act ? C.greenBg : "transparent",
+              border: item.act ? `2px solid ${C.green}` : "2px solid transparent",
+              borderRadius:12, padding:"7px 14px", cursor:"pointer",
+              display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+            <span style={{ fontSize:19 }}>{item.ic}</span>
+            <span style={{ fontSize:9, fontWeight:800, fontFamily:ff,
+              color: item.act ? C.green : C.muted,
+              textTransform:"uppercase", letterSpacing:.5 }}>{item.lb}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+/* ══════════════════════════════════════════════════════════════
+   TEACHER DASHBOARD
+══════════════════════════════════════════════════════════════ */
+const TeacherDashboard=({onSwitch})=>{
+  const [activeTab,setActiveTab]=useState("overview");
+  const [selectedStudent,setSelectedStudent]=useState(null);
+  const [modal,setModal]=useState(null);
+  const [toastMsg,setToastMsg]=useState("");
+  const [toastShow,setToastShow]=useState(false);
+  const [students,setStudents]=useState(STUDENTS);
+  const [unitReleased,setUnitReleased]=useState([true,true,true,false,false]);
+  const [counselingNote,setCounselingNote]=useState("");
+  const [noteSaved,setNoteSaved]=useState(false);
+  const toast=(msg)=>{setToastMsg(msg);setToastShow(true);setTimeout(()=>setToastShow(false),2200);};
+  const toggleUnit=(i)=>{const u=[...unitReleased];u[i]=!u[i];setUnitReleased(u);toast(`📚 Unit ${i+1} ${u[i]?"dirilis":"ditarik"}!`);};
+  const dismissAlert=(id)=>{setStudents(ss=>ss.map(s=>s.id===id?{...s,alert:false}:s));toast("✅ Alert dihapus");};
+  const saveNote=()=>{setNoteSaved(true);toast("📨 Catatan konseling terkirim ke orang tua!");};
+  const TABS=[{id:"overview",lb:"Ringkasan",ic:"📊"},{id:"students",lb:"Siswa",ic:"👨‍🎓"},{id:"curriculum",lb:"Kurikulum",ic:"📚"},{id:"alerts",lb:"Alert",ic:"🚨"}];
+  const alertCount=students.filter(s=>s.alert).length;
+  return(
+    <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0,background:C.surface,overflow:"hidden"}}>
+      <Toast msg={toastMsg} show={toastShow}/>
+      {/* header */}
+      <div style={{background:`linear-gradient(135deg,#1a237e,#283593)`,padding:"16px 18px 20px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+          <div>
+            <div style={{color:"rgba(255,255,255,.7)",fontSize:11,fontWeight:700,fontFamily:"'Nunito',sans-serif",letterSpacing:1}}>AKHLAQVERSE</div>
+            <div style={{color:"#fff",fontSize:17,fontWeight:900,fontFamily:"'Nunito',sans-serif"}}>Dasbor Guru PAI 📋</div>
+          </div>
+          <button onClick={()=>onSwitch("select")} style={{background:"rgba(255,255,255,.15)",border:"none",borderRadius:10,padding:"6px 12px",cursor:"pointer",color:"#fff",fontWeight:800,fontSize:12,fontFamily:"'Nunito',sans-serif"}}>← Menu</button>
+        </div>
+        <div style={{display:"flex",gap:10,marginTop:10}}>
+          {[{v:students.length,lb:"Total Siswa",ic:"👨‍🎓"},{v:students.filter(s=>s.doneUnits>=3).length,lb:"Lulus ≥3 Unit",ic:"✅"},{v:alertCount,lb:"Butuh Bimbingan",ic:"🚨",alert:alertCount>0}].map((s,i)=>(
+            <div key={i} style={{flex:1,background:"rgba(255,255,255,.15)",borderRadius:12,padding:"10px 8px",textAlign:"center",border:s.alert?"2px solid #ff4b4b":"2px solid transparent"}}>
+              <div style={{fontSize:20}}>{s.ic}</div>
+              <div style={{fontWeight:900,fontSize:20,color:s.alert?C.red:"#fff",fontFamily:"'Nunito',sans-serif"}}>{s.v}</div>
+              <div style={{fontWeight:700,fontSize:9,color:"rgba(255,255,255,.7)",fontFamily:"'Nunito',sans-serif",lineHeight:1.2}}>{s.lb}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* tabs */}
+      <div style={{display:"flex",background:C.white,borderBottom:`2px solid ${C.border}`,overflowX:"auto",flexShrink:0}}>
+        {TABS.map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{flex:1,background:activeTab===t.id?C.blueBg:"transparent",border:"none",borderBottom:activeTab===t.id?`3px solid ${C.blue}`:"3px solid transparent",padding:"10px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative"}}>
+            <span style={{fontSize:16}}>{t.ic}</span>
+            <span style={{fontSize:9,fontWeight:800,fontFamily:"'Nunito',sans-serif",color:activeTab===t.id?C.blue:C.muted,textTransform:"uppercase",letterSpacing:.5}}>{t.lb}</span>
+            {t.id==="alerts"&&alertCount>0&&<div style={{position:"absolute",top:6,right:"25%",width:14,height:14,borderRadius:"50%",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:900,fontFamily:"'Nunito',sans-serif"}}>{alertCount}</div>}
+          </button>
+        ))}
+      </div>
+      <div style={{flex:1,minHeight:0,overflowY:"auto",overflowX:"hidden",padding:16}}>
+        {/* OVERVIEW TAB */}
+        {activeTab==="overview"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div style={{background:C.white,borderRadius:16,padding:16,boxShadow:"0 2px 10px rgba(0,0,0,.06)"}}>
+              <div style={{fontWeight:900,fontSize:15,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:14}}>📈 Rata-Rata Kelas 8A</div>
+              {[{lb:"Empati & Sosial",val:78,color:C.blue},{lb:"Pengendalian Diri",val:82,color:C.green},{lb:"Integritas",val:88,color:C.gold}].map((m,i)=>(
+                <div key={i} style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{fontWeight:700,fontSize:12,color:C.ink2,fontFamily:"'Nunito',sans-serif"}}>{m.lb}</span>
+                    <span style={{fontWeight:900,fontSize:12,color:m.color,fontFamily:"'Nunito',sans-serif"}}>{m.val}%</span>
+                  </div>
+                  <div style={{height:8,background:C.border,borderRadius:4,overflow:"hidden"}}>
+                    <div style={{width:`${m.val}%`,height:"100%",background:m.color,borderRadius:4,transition:"width .6s ease"}}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:C.white,borderRadius:16,padding:16,boxShadow:"0 2px 10px rgba(0,0,0,.06)"}}>
+              <div style={{fontWeight:900,fontSize:15,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:12}}>🏆 Top Performer</div>
+              {students.sort((a,b)=>b.gems-a.gems).slice(0,3).map((s,i)=>(
+                <div key={s.id} onClick={()=>{setSelectedStudent(s);setModal("detail");}} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:`1px solid ${C.border}`,cursor:"pointer"}}>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:i===0?`linear-gradient(135deg,${C.gold},${C.goldDk})`:i===1?"linear-gradient(135deg,#c0c0c0,#888)":"linear-gradient(135deg,#cd7f32,#a0522d)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:12,color:"#fff",fontFamily:"'Nunito',sans-serif"}}>{i+1}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:800,fontSize:13,color:C.ink,fontFamily:"'Nunito',sans-serif"}}>{s.name}</div>
+                    <div style={{fontWeight:700,fontSize:11,color:C.muted,fontFamily:"'Nunito',sans-serif"}}>{s.grade} · {s.doneUnits}/5 unit</div>
+                  </div>
+                  <div style={{fontWeight:900,fontSize:14,color:C.gold,fontFamily:"'Nunito',sans-serif"}}>💎{s.gems}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* STUDENTS TAB */}
+        {activeTab==="students"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {students.map(s=>(
+              <div key={s.id} onClick={()=>{setSelectedStudent(s);setModal("detail");}} style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.05)",border:s.alert?`2px solid ${C.red}`:s.doneUnits>=4?`2px solid ${C.greenBg}`:"2px solid transparent",cursor:"pointer",transition:"transform .15s"}}
+                onMouseEnter={e=>e.currentTarget.style.transform="scale(1.01)"}
+                onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{fontSize:34}}>👤</div>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif"}}>{s.name}</span>
+                      {s.alert&&<span style={{background:C.red,color:"#fff",fontSize:9,fontWeight:800,fontFamily:"'Nunito',sans-serif",borderRadius:6,padding:"1px 6px"}}>ALERT</span>}
+                    </div>
+                    <div style={{fontWeight:700,fontSize:11,color:C.muted,fontFamily:"'Nunito',sans-serif"}}>{s.grade} · {s.doneUnits}/5 unit selesai</div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontWeight:900,fontSize:14,color:C.gold,fontFamily:"'Nunito',sans-serif"}}>💎{s.gems}</div>
+                    <div style={{fontWeight:700,fontSize:11,color:C.muted,fontFamily:"'Nunito',sans-serif"}}>🔥{s.streak}</div>
+                  </div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:10}}>
+                  <div><div style={{fontSize:9,fontWeight:800,color:C.muted,fontFamily:"'Nunito',sans-serif",marginBottom:3}}>Empati</div><Spark data={s.emotion} color={C.blue}/></div>
+                  <div><div style={{fontSize:9,fontWeight:800,color:C.muted,fontFamily:"'Nunito',sans-serif",marginBottom:3}}>Pengendalian</div><Spark data={s.selfCtrl} color={C.green}/></div>
+                  <div><div style={{fontSize:9,fontWeight:800,color:C.muted,fontFamily:"'Nunito',sans-serif",marginBottom:3}}>Integritas</div><Spark data={s.integrity} color={C.gold}/></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* CURRICULUM TAB */}
+        {activeTab==="curriculum"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.05)",marginBottom:4}}>
+              <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:4}}>Panel Rilis Unit Materi</div>
+              <div style={{fontWeight:700,fontSize:12,color:C.muted,fontFamily:"'Nunito',sans-serif"}}>Aktifkan/nonaktifkan akses unit untuk seluruh siswa</div>
+            </div>
+            {QUIZZES.map((q,i)=>(
+              <div key={i} style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.05)",display:"flex",alignItems:"center",gap:12}}>
+                <div style={{width:44,height:44,borderRadius:12,background:unitReleased[i]?`linear-gradient(135deg,${q.color},${q.color}cc)`:`linear-gradient(135deg,#e0e0e0,#ccc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{unitReleased[i]?q.icon:"🔒"}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif"}}>{q.unit} – {q.title}</div>
+                  <div style={{fontWeight:700,fontSize:11,color:C.muted,fontFamily:"'Nunito',sans-serif"}}>Konsep: {q.concept} · {q.points} AP</div>
+                  <div style={{fontWeight:700,fontSize:11,color:unitReleased[i]?C.green:C.muted,fontFamily:"'Nunito',sans-serif",marginTop:2}}>{unitReleased[i]?"✅ Aktif — siswa bisa akses":"⏸ Belum dirilis"}</div>
+                </div>
+                <button onClick={()=>toggleUnit(i)} style={{background:unitReleased[i]?C.redBg:`linear-gradient(135deg,${C.green},${C.greenDk})`,border:unitReleased[i]?`2px solid ${C.red}`:"none",borderRadius:10,padding:"7px 12px",cursor:"pointer",fontWeight:900,fontSize:12,fontFamily:"'Nunito',sans-serif",color:unitReleased[i]?C.red:"#fff",whiteSpace:"nowrap"}}>
+                  {unitReleased[i]?"Tarik":"Rilis"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* ALERTS TAB */}
+        {activeTab==="alerts"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {students.filter(s=>s.alert).length===0&&(
+              <div style={{textAlign:"center",padding:32}}>
+                <div style={{fontSize:48}}>✅</div>
+                <div style={{fontWeight:900,fontSize:16,color:C.green,fontFamily:"'Nunito',sans-serif",marginTop:8}}>Tidak ada alert aktif!</div>
+                <div style={{fontWeight:700,fontSize:13,color:C.muted,fontFamily:"'Nunito',sans-serif",marginTop:4}}>Semua siswa dalam kondisi baik.</div>
+              </div>
+            )}
+            {students.filter(s=>s.alert).map(s=>(
+              <div key={s.id} style={{background:C.white,borderRadius:14,padding:14,border:`2px solid ${C.red}`,boxShadow:`0 4px 14px ${C.red}22`}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                  <span style={{fontSize:28}}>⚠️</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:900,fontSize:14,color:C.red,fontFamily:"'Nunito',sans-serif"}}>{s.name} — Butuh Perhatian</div>
+                    <div style={{fontWeight:700,fontSize:11,color:C.muted,fontFamily:"'Nunito',sans-serif"}}>{s.grade} · Hearts habis berulang kali · Streak = {s.streak} hari</div>
+                  </div>
+                </div>
+                <div style={{background:C.redBg,borderRadius:10,padding:"10px 12px",marginBottom:12}}>
+                  <p style={{fontWeight:700,fontSize:12,color:C.redDk,fontFamily:"'Nunito',sans-serif",margin:0,lineHeight:1.5}}>Siswa ini mengalami kesulitan menjawab kuis akhlak secara berulang. Disarankan konseling PAI personal untuk mendiskusikan etika digital.</p>
+                </div>
+                {!noteSaved?(
+                  <>
+                    <textarea value={counselingNote} onChange={e=>setCounselingNote(e.target.value)} placeholder="Tulis catatan konseling untuk dikirim ke orang tua..." style={{width:"100%",height:80,border:`2px solid ${C.border}`,borderRadius:10,padding:10,fontFamily:"'Nunito',sans-serif",fontSize:12,fontWeight:700,color:C.ink,resize:"none",outline:"none",boxSizing:"border-box",marginBottom:8}}/>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={saveNote} style={{flex:1,background:`linear-gradient(135deg,${C.blue},${C.blueDk})`,border:"none",borderRadius:10,padding:"10px 0",fontWeight:900,fontSize:13,fontFamily:"'Nunito',sans-serif",color:"#fff",cursor:"pointer"}}>📨 Kirim ke Ortu</button>
+                      <button onClick={()=>dismissAlert(s.id)} style={{flex:1,background:C.surface,border:`2px solid ${C.border}`,borderRadius:10,padding:"10px 0",fontWeight:900,fontSize:13,fontFamily:"'Nunito',sans-serif",color:C.ink2,cursor:"pointer"}}>✅ Hapus Alert</button>
+                    </div>
+                  </>
+                ):(
+                  <div style={{background:C.greenBg,borderRadius:10,padding:12,textAlign:"center"}}>
+                    <div style={{fontWeight:900,fontSize:13,color:C.greenDk,fontFamily:"'Nunito',sans-serif"}}>✅ Catatan terkirim ke orang tua!</div>
+                  </div>
+                )}
+              </div>
+            ))}
+            <div style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.05)"}}>
+              <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:10}}>📋 Riwayat Alert (Selesai)</div>
+              {students.filter(s=>!s.alert&&s.hearts<5).map(s=>(
+                <div key={s.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <span style={{fontSize:16}}>✅</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:12,color:C.ink,fontFamily:"'Nunito',sans-serif"}}>{s.name}</div>
+                    <div style={{fontWeight:700,fontSize:11,color:C.muted,fontFamily:"'Nunito',sans-serif"}}>Ditangani · {s.grade}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      {/* student detail modal */}
+      <Modal open={modal==="detail"&&!!selectedStudent} onClose={()=>setModal(null)} title={`👤 ${selectedStudent && ch.name}`} color="#1a237e">
+        {selectedStudent&&(
+          <>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+              {[{lb:"Kelas",v:selectedStudent.grade,ic:"🏫"},{lb:"Units Selesai",v:`${selectedStudent.doneUnits}/5`,ic:"⭐"},{lb:"Akhlaq Gems",v:selectedStudent.gems,ic:"💎"},{lb:"Streak",v:`${selectedStudent.streak}h`,ic:"🔥"}].map((item,i)=>(
+                <div key={i} style={{background:C.surface,borderRadius:12,padding:"10px 12px",textAlign:"center"}}>
+                  <div style={{fontSize:18}}>{item.ic}</div>
+                  <div style={{fontWeight:900,fontSize:16,color:C.ink,fontFamily:"'Nunito',sans-serif"}}>{item.v}</div>
+                  <div style={{fontWeight:700,fontSize:10,color:C.muted,fontFamily:"'Nunito',sans-serif"}}>{item.lb}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:C.white,border:`1px solid ${C.border}`,borderRadius:12,padding:14,marginBottom:14}}>
+              <div style={{fontWeight:900,fontSize:13,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:12}}>📊 Grafik Karakter (7 hari)</div>
+              {[{lb:"Empati & Sosial",data:selectedStudent.emotion,color:C.blue},{lb:"Pengendalian Diri",data:selectedStudent.selfCtrl,color:C.green},{lb:"Integritas",data:selectedStudent.integrity,color:C.gold}].map((m,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <span style={{fontWeight:700,fontSize:11,color:C.ink2,fontFamily:"'Nunito',sans-serif",minWidth:100}}>{m.lb}</span>
+                  <Spark data={m.data} color={m.color}/>
+                </div>
+              ))}
+            </div>
+            {selectedStudent.journal&&(
+              <div style={{background:C.goldBg,border:`1px solid ${C.gold}`,borderRadius:12,padding:12}}>
+                <div style={{fontWeight:900,fontSize:12,color:C.goldDk,fontFamily:"'Nunito',sans-serif",marginBottom:6}}>📝 Reflection Journal Terbaru</div>
+                <p style={{fontWeight:700,fontSize:12,color:C.ink2,fontFamily:"'Nunito',sans-serif",lineHeight:1.5,margin:0}}>"{selectedStudent.journal}"</p>
+              </div>
+            )}
+            {!selectedStudent.journal&&(
+              <div style={{background:C.redBg,borderRadius:12,padding:12,textAlign:"center"}}>
+                <div style={{fontWeight:800,fontSize:12,color:C.red,fontFamily:"'Nunito',sans-serif"}}>⚠️ Belum ada entri jurnal</div>
+              </div>
+            )}
+          </>
+        )}
+      </Modal>
+    </div>
+  );
+};
+/* ══════════════════════════════════════════════════════════════
+   PARENT DASHBOARD
+══════════════════════════════════════════════════════════════ */
+const ParentDashboard=({onSwitch})=>{
+  const [activeTab,setActiveTab]=useState("home");
+  const [missions,setMissions]=useState(MISSIONS);
+  const [modal,setModal]=useState(null);
+  const [selectedMission,setSelectedMission]=useState(null);
+  const [toastMsg,setToastMsg]=useState("");
+  const [toastShow,setToastShow]=useState(false);
+  const [logEntries,setLogEntries]=useState([
+    {date:"08 Jun",mood:4,note:"Anak membantu adik yang menangis tanpa diminta"},
+    {date:"07 Jun",mood:3,note:"Sempat marah saat kalah main, tapi cepat tenang sendiri"},
+    {date:"06 Jun",mood:5,note:"Menolak ajakan teman untuk menonton konten kurang baik"},
+  ]);
+  const [newMood,setNewMood]=useState(3);
+  const [newNote,setNewNote]=useState("");
+  const [logSaved,setLogSaved]=useState(false);
+  const toast=(msg)=>{setToastMsg(msg);setToastShow(true);setTimeout(()=>setToastShow(false),2200);};
+  const approveMission=(id,val)=>{
+    setMissions(ms=>ms.map(m=>m.id===id?{...m,status:val}:m));
+    toast(val==="approved"?"✅ Verifikasi diterima! Akhlaq Gems +10":"❌ Ditandai belum tercapai");
+  };
+  const saveLog=()=>{
+    setLogEntries(es=>[{date:"Hari ini",mood:newMood,note:newNote},...es]);
+    setLogSaved(true);setNewNote("");
+    toast("📊 Log perilaku berhasil disimpan!");
+    setTimeout(()=>setLogSaved(false),3000);
+  };
+  const pendingCount=missions.filter(m=>m.status==="pending").length;
+  const MOOD_EMOJI=["","😔","😐","🙂","😊","🌟"];
+  return(
+    <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0,background:C.surface,overflow:"hidden"}}>
+      <Toast msg={toastMsg} show={toastShow}/>
+      {/* header */}
+      <div style={{background:`linear-gradient(135deg,#4a148c,#6a1b9a)`,padding:"16px 18px 20px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+          <div>
+            <div style={{color:"rgba(255,255,255,.7)",fontSize:11,fontWeight:700,fontFamily:"'Nunito',sans-serif",letterSpacing:1}}>AKHLAQVERSE</div>
+            <div style={{color:"#fff",fontSize:17,fontWeight:900,fontFamily:"'Nunito',sans-serif"}}>Dasbor Orang Tua 👨‍👩‍👧</div>
+          </div>
+          <button onClick={()=>onSwitch("select")} style={{background:"rgba(255,255,255,.15)",border:"none",borderRadius:10,padding:"6px 12px",cursor:"pointer",color:"#fff",fontWeight:800,fontSize:12,fontFamily:"'Nunito',sans-serif"}}>← Menu</button>
+        </div>
+        <div style={{background:"rgba(255,255,255,.12)",borderRadius:14,padding:"12px 14px",marginTop:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{fontSize:36}}>🧕</div>
+            <div>
+              <div style={{color:"#fff",fontSize:15,fontWeight:900,fontFamily:"'Nunito',sans-serif"}}>Fatimah Az-Zahra</div>
+              <div style={{color:"rgba(255,255,255,.75)",fontSize:12,fontWeight:700,fontFamily:"'Nunito',sans-serif"}}>Kelas 8A · 3/5 Unit Selesai · 💎 340 AP</div>
+              <div style={{display:"flex",gap:6,marginTop:4}}>
+                <span style={{background:C.green,color:"#fff",fontSize:10,fontWeight:800,fontFamily:"'Nunito',sans-serif",borderRadius:6,padding:"2px 8px"}}>🔥 Streak 12h</span>
+                <span style={{background:"rgba(255,255,255,.2)",color:"rgba(255,255,255,.9)",fontSize:10,fontWeight:800,fontFamily:"'Nunito',sans-serif",borderRadius:6,padding:"2px 8px"}}>❤️❤️❤️❤️❤️</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* tabs */}
+      <div style={{display:"flex",background:C.white,borderBottom:`2px solid ${C.border}`,flexShrink:0}}>
+        {[{id:"home",lb:"Beranda",ic:"🏠"},{id:"missions",lb:"Misi",ic:"✅"},{id:"log",lb:"Log Harian",ic:"📊"},{id:"progress",lb:"Progress",ic:"📈"}].map(t=>(
+          <button key={t.id} onClick={()=>setActiveTab(t.id)} style={{flex:1,background:activeTab===t.id?C.purpleBg:"transparent",border:"none",borderBottom:activeTab===t.id?`3px solid ${C.purple}`:"3px solid transparent",padding:"10px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative"}}>
+            <span style={{fontSize:16}}>{t.ic}</span>
+            <span style={{fontSize:9,fontWeight:800,fontFamily:"'Nunito',sans-serif",color:activeTab===t.id?C.purple:C.muted,textTransform:"uppercase",letterSpacing:.4}}>{t.lb}</span>
+            {t.id==="missions"&&pendingCount>0&&<div style={{position:"absolute",top:6,right:"22%",width:14,height:14,borderRadius:"50%",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:900,fontFamily:"'Nunito',sans-serif"}}>{pendingCount}</div>}
+          </button>
+        ))}
+      </div>
+      <div style={{flex:1,minHeight:0,overflowY:"auto",overflowX:"hidden",padding:14}}>
+        {/* HOME TAB */}
+        {activeTab==="home"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {pendingCount>0&&(
+              <div onClick={()=>setActiveTab("missions")} style={{background:`linear-gradient(135deg,#ff9800,#e65100)`,borderRadius:16,padding:14,cursor:"pointer",boxShadow:`0 6px 20px rgba(255,152,0,.4)`}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:28}}>📬</span>
+                  <div>
+                    <div style={{color:"#fff",fontWeight:900,fontSize:14,fontFamily:"'Nunito',sans-serif"}}>{pendingCount} Verifikasi Misi Menunggu!</div>
+                    <div style={{color:"rgba(255,255,255,.85)",fontWeight:700,fontSize:12,fontFamily:"'Nunito',sans-serif"}}>Konfirmasi apakah anak sudah praktik adab di rumah</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div style={{background:C.white,borderRadius:16,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+              <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:12}}>📊 Metrik Akhlaq Minggu Ini</div>
+              {[{lb:"Empati & Sosial",val:4.2,color:C.blue,data:[3,4,4,5,4,5,4]},{lb:"Pengendalian Emosi",val:4.0,color:C.teal,data:[3,3,4,4,4,4,5]},{lb:"Integritas",val:4.6,color:C.gold,data:[4,5,4,5,5,5,5]}].map((m,i)=>(
+                <div key={i} style={{marginBottom:12}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                    <span style={{fontWeight:700,fontSize:12,color:C.ink2,fontFamily:"'Nunito',sans-serif"}}>{m.lb}</span>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <Spark data={m.data} color={m.color} h={24} w={60}/>
+                      <span style={{fontWeight:900,fontSize:13,color:m.color,fontFamily:"'Nunito',sans-serif"}}>{m.val}/5</span>
+                    </div>
+                  </div>
+                  <MiniBar value={m.val} max={5} color={m.color}/>
+                </div>
+              ))}
+            </div>
+            <div style={{background:C.white,borderRadius:16,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+              <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:10}}>🎓 Progress Unit Terbaru</div>
+              {QUIZZES.slice(0,3).map((q,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:i<3?`linear-gradient(135deg,${C.green},${C.greenDk})`:`linear-gradient(135deg,#e0e0e0,#ccc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{i<3?"✅":"🔒"}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:800,fontSize:13,color:C.ink,fontFamily:"'Nunito',sans-serif"}}>{q.title}</div>
+                    <div style={{fontWeight:700,fontSize:11,color:i<3?C.green:C.muted,fontFamily:"'Nunito',sans-serif"}}>{i<3?"Selesai — Konsep dikuasai":"Belum dimulai"}</div>
+                  </div>
+                  {i<3&&<span style={{fontSize:12,fontWeight:900,color:C.gold,fontFamily:"'Nunito',sans-serif"}}>+{q.points}AP</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* MISSIONS TAB */}
+        {activeTab==="missions"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{background:C.white,borderRadius:14,padding:14,marginBottom:4,boxShadow:"0 2px 8px rgba(0,0,0,.05)"}}>
+              <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:4}}>Feed Verifikasi Misi Nyata</div>
+              <p style={{fontWeight:700,fontSize:12,color:C.muted,fontFamily:"'Nunito',sans-serif",margin:0,lineHeight:1.5}}>Konfirmasi apakah anak benar-benar mempraktikkan adab yang dipelajari di aplikasi ke dalam kehidupan sehari-hari.</p>
+            </div>
+            {missions.map(m=>(
+              <div key={m.id} style={{background:C.white,borderRadius:14,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.05)",border:m.status==="pending"?`2px solid #ff9800`:m.status==="approved"?`2px solid ${C.green}`:`2px solid ${C.red}`}}>
+                <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10}}>
+                  <div style={{width:40,height:40,borderRadius:12,background:m.status==="approved"?C.greenBg:m.status==="rejected"?C.redBg:C.goldBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>
+                    {m.status==="approved"?"✅":m.status==="rejected"?"❌":"⏳"}
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:900,fontSize:13,color:C.ink,fontFamily:"'Nunito',sans-serif"}}>{m.unit}</div>
+                    <div style={{fontWeight:700,fontSize:11,color:C.muted,fontFamily:"'Nunito',sans-serif",marginBottom:6}}>{m.date}</div>
+                    <div style={{background:C.surface,borderRadius:10,padding:"9px 11px"}}>
+                      <p style={{fontWeight:700,fontSize:12,color:C.ink2,fontFamily:"'Nunito',sans-serif",margin:0,lineHeight:1.5}}>{m.desc}</p>
+                    </div>
+                  </div>
+                </div>
+                {m.status==="pending"&&(
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={()=>approveMission(m.id,"approved")} style={{flex:1,background:`linear-gradient(135deg,${C.green},${C.greenDk})`,border:"none",borderRadius:10,padding:"11px 0",fontWeight:900,fontSize:13,fontFamily:"'Nunito',sans-serif",color:"#fff",cursor:"pointer",boxShadow:`0 4px 12px ${C.green}44`}}>
+                      ✅ Ya, sudah dipraktikkan
+                    </button>
+                    <button onClick={()=>approveMission(m.id,"rejected")} style={{flex:1,background:C.redBg,border:`2px solid ${C.red}`,borderRadius:10,padding:"11px 0",fontWeight:900,fontSize:13,fontFamily:"'Nunito',sans-serif",color:C.red,cursor:"pointer"}}>
+                      ❌ Belum terlihat
+                    </button>
+                  </div>
+                )}
+                {m.status!=="pending"&&(
+                  <div style={{textAlign:"center",padding:"6px 0"}}>
+                    <span style={{fontWeight:800,fontSize:12,color:m.status==="approved"?C.green:C.red,fontFamily:"'Nunito',sans-serif"}}>
+                      {m.status==="approved"?"✅ Sudah diverifikasi — Gems +10 diberikan":"❌ Ditandai belum tercapai — guru akan diberitahu"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {/* LOG TAB */}
+        {activeTab==="log"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{background:C.white,borderRadius:16,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+              <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:12}}>➕ Tambah Log Hari Ini</div>
+              <div style={{marginBottom:10}}>
+                <div style={{fontWeight:800,fontSize:12,color:C.ink2,fontFamily:"'Nunito',sans-serif",marginBottom:6}}>Mood & Perilaku Hari Ini:</div>
+                <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+                  {[1,2,3,4,5].map(v=>(
+                    <button key={v} onClick={()=>setNewMood(v)} style={{background:newMood===v?C.purpleBg:"transparent",border:newMood===v?`2px solid ${C.purple}`:`2px solid ${C.border}`,borderRadius:10,padding:"8px 6px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",transition:"all .2s"}}>
+                      <span style={{fontSize:22}}>{MOOD_EMOJI[v]}</span>
+                      <span style={{fontSize:9,fontWeight:800,fontFamily:"'Nunito',sans-serif",color:newMood===v?C.purple:C.muted}}>{v}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <textarea value={newNote} onChange={e=>setNewNote(e.target.value)} placeholder="Ceritakan perilaku akhlak anak hari ini (empati, kejujuran, pengendalian diri)..." style={{width:"100%",height:90,border:`2px solid ${C.border}`,borderRadius:10,padding:10,fontFamily:"'Nunito',sans-serif",fontSize:12,fontWeight:700,color:C.ink,resize:"none",outline:"none",boxSizing:"border-box",marginBottom:10}}/>
+              <button onClick={saveLog} disabled={!newNote.trim()} style={{width:"100%",background:newNote.trim()?`linear-gradient(135deg,${C.purple},#9c27b0)`:C.border,border:"none",borderRadius:12,padding:"12px 0",fontWeight:900,fontSize:14,fontFamily:"'Nunito',sans-serif",color:newNote.trim()?"#fff":C.muted,cursor:newNote.trim()?"pointer":"default"}}>
+                {logSaved?"✅ Log Tersimpan!":"Simpan Log Harian"}
+              </button>
+            </div>
+            <div style={{background:C.white,borderRadius:16,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+              <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:12}}>📋 Riwayat Log</div>
+              {logEntries.map((e,i)=>(
+                <div key={i} style={{padding:"10px 0",borderBottom:`1px solid ${C.border}`,display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <div style={{width:38,height:38,borderRadius:10,background:C.purpleBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{MOOD_EMOJI[e.mood]}</div>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:12,color:C.purple,fontFamily:"'Nunito',sans-serif",marginBottom:2}}>{e.date} · Mood {e.mood}/5</div>
+                    <p style={{fontWeight:700,fontSize:12,color:C.ink2,fontFamily:"'Nunito',sans-serif",margin:0,lineHeight:1.5}}>{e.note}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* PROGRESS TAB */}
+        {activeTab==="progress"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{background:C.white,borderRadius:16,padding:14,boxShadow:"0 2px 8px rgba(0,0,0,.06)"}}>
+              <div style={{fontWeight:900,fontSize:14,color:C.ink,fontFamily:"'Nunito',sans-serif",marginBottom:12}}>🗺️ Peta Progress Unit</div>
+              {QUIZZES.map((q,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                  <div style={{width:38,height:38,borderRadius:10,background:i<3?`linear-gradient(135deg,${q.color},${q.color}cc)`:`linear-gradient(135deg,#e0e0e0,#ccc)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{i<3?q.icon:"🔒"}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:800,fontSize:13,color:C.ink,fontFamily:"'Nunito',sans-serif"}}>{q.title}</div>
+                    <div style={{fontWeight:700,fontSize:10,color:i<3?C.green:C.muted,fontFamily:"'Nunito',sans-serif"}}>Konsep: {q.concept}</div>
+                    <div style={{height:5,background:C.border,borderRadius:4,marginTop:4,overflow:"hidden"}}>
+                      <div style={{width:i<3?"100%":i===3?"0%":"0%",height:"100%",background:C.green,borderRadius:4}}/>
+                    </div>
+                  </div>
+                  <span style={{fontWeight:900,fontSize:11,color:i<3?C.green:C.muted,fontFamily:"'Nunito',sans-serif"}}>{i<3?"✅ Selesai":"⏳"}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{background:`linear-gradient(135deg,#4a148c,#6a1b9a)`,borderRadius:16,padding:14}}>
+              <div style={{color:"rgba(255,255,255,.8)",fontSize:11,fontWeight:700,fontFamily:"'Nunito',sans-serif",letterSpacing:1,marginBottom:4}}>CATATAN DARI GURU PAI</div>
+              <div style={{background:"rgba(255,255,255,.15)",borderRadius:10,padding:12}}>
+                <p style={{color:"#fff",fontWeight:700,fontSize:13,fontFamily:"'Nunito',sans-serif",lineHeight:1.6,margin:0}}>
+                  "Fatimah menunjukkan kemajuan luar biasa dalam memahami konsep Tabayyun dan Muru'ah. Nilai sikap afektif: A (Sangat Baik). Lanjutkan bimbingan di rumah!"
+                </p>
+                <div style={{color:"rgba(255,255,255,.6)",fontWeight:700,fontSize:11,fontFamily:"'Nunito',sans-serif",marginTop:8}}>— Guru PAI · 07 Jun 2026</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+/* ══════════════════════════════════════════════════════════════
+   LOGIN / GATEWAY SCREEN
+══════════════════════════════════════════════════════════════ */
+const ROLES = [
+  {
+    id: "student", label: "Siswa", icon: "🎒",
+    accent: "#58cc02", accentDk: "#46a302", accentSh: "rgba(88,204,2,.45)",
+    grad: "linear-gradient(135deg,#58cc02,#46a302)",
+    bg: "linear-gradient(160deg,#0a1f0a 0%,#0d3b0d 55%,#1a5e1a 100%)",
+    cardBg: "rgba(255,255,255,.06)",
+    placeholder: "Masukkan Email Sekolah / Email Terdaftar...",
+    sub: "Jalur Akhlaq · Kuis Skenario · Jurnal",
+  },
+  {
+    id: "teacher", label: "Guru", icon: "👨‍🏫",
+    accent: "#1cb0f6", accentDk: "#0891d4", accentSh: "rgba(28,176,246,.45)",
+    grad: "linear-gradient(135deg,#1cb0f6,#0891d4)",
+    bg: "linear-gradient(160deg,#020d1f 0%,#0a1a3e 55%,#0d2b6b 100%)",
+    cardBg: "rgba(255,255,255,.06)",
+    placeholder: "Masukkan Email Institusi / Email Terdaftar...",
+    sub: "Monitoring · Kurikulum · Alert System",
+  },
+  {
+    id: "parent", label: "Orang Tua", icon: "👨‍👩‍👧",
+    accent: "#ffc800", accentDk: "#e6a800", accentSh: "rgba(255,200,0,.45)",
+    grad: "linear-gradient(135deg,#ffc800,#e6a800)",
+    bg: "linear-gradient(160deg,#1a1200 0%,#2e2000 55%,#4a3500 100%)",
+    cardBg: "rgba(255,255,255,.06)",
+    placeholder: "Masukkan Email Orang Tua / Email Terdaftar...",
+    sub: "Verifikasi Misi · Log Perilaku · Progress",
+  },
+];
+const EyeIcon = ({ open }) => open ? (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  </svg>
+) : (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+const SelectScreen = ({ onSelect }) => {
+  const [activeRole, setActiveRole] = useState("student");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const [forgotClicked, setForgotClicked] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [pwFocused, setPwFocused] = useState(false);
+  const [shake, setShake] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const role = ROLES.find(r => r.id === activeRole);
+  const handleLogin = () => {
+    if (!email.trim() || !password.trim()) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => { setLoading(false); onSelect(activeRole); }, 900);
+  };
+  const handleForgot = () => {
+    setForgotClicked(true);
+    setTimeout(() => setForgotClicked(false), 2500);
+  };
+  const ff = "'Nunito', sans-serif";
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column",
+      flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden",
+      background: role.bg,
+      transition: "background 0.5s ease",
+    }}>
+      {/* ── TOP DECORATION ── */}
+      <div style={{ position: "relative", padding: "36px 24px 0", textAlign: "center" }}>
+        {/* Decorative circles */}
+        <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: `${role.accent}18`, pointerEvents: "none" }}/>
+        <div style={{ position: "absolute", top: 20, left: -30, width: 100, height: 100, borderRadius: "50%", background: `${role.accent}10`, pointerEvents: "none" }}/>
+        {/* Logo */}
+        <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 72, height: 72, borderRadius: 22, marginBottom: 14,
+          background: `linear-gradient(135deg,${role.accent}33,${role.accent}11)`,
+          border: `2px solid ${role.accent}44`,
+          animation: "floatUp 3s ease-in-out infinite",
+          fontSize: 36,
+        }}>🕌</div>
+        <h1 style={{ fontWeight: 900, fontSize: 28, color: "#fff", fontFamily: ff,
+          letterSpacing: 2, marginBottom: 4 }}>AKHLAQVERSE</h1>
+        <p style={{ fontWeight: 700, fontSize: 12, color: "rgba(255,255,255,.55)",
+          fontFamily: ff, letterSpacing: 1 }}>Platform Pendidikan Akhlak Digital</p>
+      </div>
+      {/* ── ROLE SELECTOR TABS ── */}
+      <div style={{ margin: "24px 20px 0", padding: 5,
+        background: "rgba(0,0,0,.3)", borderRadius: 18,
+        display: "flex", gap: 4, border: "1px solid rgba(255,255,255,.08)" }}>
+      <div style={{
+        margin: "24px 20px 0", padding: 4,
+        background: "rgba(0,0,0,.25)",
+        borderRadius: 20,
+        display: "flex",
+        position: "relative",
+        border: "1px solid rgba(255,255,255,.08)",
+        backdropFilter: "blur(8px)"
+      }}>
+        {/* Sliding Indicator Background */}
+        <div style={{
+          position: "absolute",
+          top: 4,
+          bottom: 4,
+          left: `calc(4px + ${ROLES.findIndex(r => r.id === activeRole) * 33.33}%)`,
+          width: "calc(33.33% - 8px)",
+          background: role.grad,
+          borderRadius: 16,
+          transition: "left 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
+          boxShadow: `0 4px 15px ${role.accent}55`,
+          zIndex: 1
+        }} />
+        {ROLES.map(r => {
+          const isActive = r.id === activeRole;
+          return (
+            <button key={r.id} onClick={() => { setActiveRole(r.id); setEmail(""); setPassword(""); setShowPw(false); }}
+              style={{
+                flex: 1, border: "none", borderRadius: 14, padding: "10px 4px",
+                cursor: "pointer", transition: "all 0.3s ease",
+                background: isActive ? r.grad : "transparent",
+                boxShadow: isActive ? `0 4px 16px ${r.accentSh}` : "none",
+                transform: isActive ? "translateY(-1px)" : "translateY(0)",
+                flex: 1,
+                border: "none",
+                background: "transparent",
+                borderRadius: 16,
+                padding: "10px 0",
+                cursor: "pointer",
+                position: "relative",
+                zIndex: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "opacity 0.3s ease",
+                opacity: isActive ? 1 : 0.55
+              }}>
+              <div style={{ fontSize: 18, marginBottom: 2 }}>{r.icon}</div>
+              <div style={{ fontWeight: 900, fontSize: 11, fontFamily: ff,
+                color: isActive ? "#fff" : "rgba(255,255,255,.45)",
+                letterSpacing: 0.5 }}>{r.label}</div>
+                color: "#fff", letterSpacing: 0.5 }}>{r.label}</div>
+            </button>
+          );
+        })}
+      </div>
+      {/* ── CARD ── */}
+      <div style={{
+        margin: "16px 20px 0", padding: "22px 20px",
+        background: "rgba(255,255,255,.07)",
+        borderRadius: 24, backdropFilter: "blur(12px)",
+        border: `1px solid ${role.accent}30`,
+        boxShadow: `0 8px 32px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.08)`,
+        boxShadow: `0 15px 35px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.12)`,
+        animation: shake ? "shake 0.4s ease" : "none",
+        transition: "border-color 0.4s ease",
+      }}>
+        {/* Role label */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10,
+            background: `linear-gradient(135deg,${role.accent},${role.accentDk})`,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+            boxShadow: `0 4px 12px ${role.accentSh}` }}>{role.icon}</div>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", fontFamily: ff }}>Masuk sebagai {role.label}</div>
+            <div style={{ fontWeight: 700, fontSize: 10, color: "rgba(255,255,255,.5)", fontFamily: ff }}>{role.sub}</div>
+          </div>
+        </div>
+        {/* EMAIL INPUT */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: "block", fontWeight: 800, fontSize: 11,
+            color: emailFocused ? role.accent : "rgba(255,255,255,.6)",
+            fontFamily: ff, letterSpacing: 1, marginBottom: 6,
+            textTransform: "uppercase", transition: "color 0.2s" }}>Email</label>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+              fontSize: 16, pointerEvents: "none", opacity: 0.5 }}>✉️</span>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onFocus={() => setEmailFocused(true)}
+              onBlur={() => setEmailFocused(false)}
+              placeholder={role.placeholder}
+              style={{
+                width: "100%", padding: "13px 14px 13px 42px",
+                background: emailFocused ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.07)",
+                border: `2px solid ${emailFocused ? role.accent : "rgba(255,255,255,.12)"}`,
+                borderRadius: 14, outline: "none",
+                fontFamily: ff, fontWeight: 700, fontSize: 13,
+                color: "#fff", transition: "all 0.25s ease",
+                boxShadow: emailFocused ? `0 0 0 4px ${role.accent}22` : "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+        </div>
+        {/* PASSWORD INPUT */}
+        <div style={{ marginBottom: 6 }}>
+          <label style={{ display: "block", fontWeight: 800, fontSize: 11,
+            color: pwFocused ? role.accent : "rgba(255,255,255,.6)",
+            fontFamily: ff, letterSpacing: 1, marginBottom: 6,
+            textTransform: "uppercase", transition: "color 0.2s" }}>Kata Sandi</label>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+              fontSize: 16, pointerEvents: "none", opacity: 0.5 }}>🔑</span>
+            <input
+              type={showPw ? "text" : "password"}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onFocus={() => setPwFocused(true)}
+              onBlur={() => setPwFocused(false)}
+              placeholder="Masukkan Kata Sandi..."
+              style={{
+                width: "100%", padding: "13px 46px 13px 42px",
+                background: pwFocused ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.07)",
+                border: `2px solid ${pwFocused ? role.accent : "rgba(255,255,255,.12)"}`,
+                borderRadius: 14, outline: "none",
+                fontFamily: ff, fontWeight: 700, fontSize: 13,
+                color: "#fff", transition: "all 0.25s ease",
+                boxShadow: pwFocused ? `0 0 0 4px ${role.accent}22` : "none",
+                boxSizing: "border-box",
+              }}
+            />
+            {/* Eye toggle */}
+            <button onClick={() => setShowPw(p => !p)}
+              style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                color: showPw ? role.accent : "rgba(255,255,255,.4)",
+                display: "flex", alignItems: "center", transition: "color 0.2s",
+                padding: 0 }}>
+              <EyeIcon open={showPw}/>
+            </button>
+          </div>
+        </div>
+        {/* FORGOT */}
+        <div style={{ textAlign: "right", marginBottom: 22 }}>
+          <button onClick={handleForgot}
+            style={{ background: "none", border: "none", cursor: "pointer",
+              fontFamily: ff, fontWeight: 800, fontSize: 12,
+              color: forgotClicked ? role.accent : "rgba(255,255,255,.4)",
+              transition: "color 0.2s",
+              textDecoration: forgotClicked ? "underline" : "none" }}>
+            {forgotClicked ? "📧 Link reset dikirim!" : "Lupa Kata Sandi?"}
+          </button>
+        </div>
+        {/* SUBMIT BUTTON — Duolingo 3D style */}
+        <div style={{ position: "relative" }}>
+          {/* 3D shadow layer */}
+          <div style={{
+            position: "absolute", bottom: -4, left: 0, right: 0,
+            height: "100%", borderRadius: 16,
+            background: role.accentDk,
+            transition: "bottom 0.1s ease",
+          }}/>
+          <button
+            onMouseDown={() => setPressed(true)}
+            onMouseUp={() => { setPressed(false); handleLogin(); }}
+            onMouseLeave={() => setPressed(false)}
+            onTouchStart={() => setPressed(true)}
+            onTouchEnd={() => { setPressed(false); handleLogin(); }}
+            style={{
+              position: "relative", width: "100%", border: "none",
+              borderRadius: 16, padding: "15px 0",
+              background: role.grad,
+              fontFamily: ff, fontWeight: 900, fontSize: 16,
+              color: role.id === "parent" ? "#5a3e00" : "#fff",
+              cursor: "pointer",
+              transform: pressed ? "translateY(4px)" : "translateY(0)",
+              transition: "transform 0.1s ease",
+              letterSpacing: 0.5,
+              boxShadow: pressed
+                ? "none"
+                : `0 0 0 2px ${role.accentDk}, 0 6px 0 ${role.accentDk}`,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}>
+            {loading ? (
+              <>
+                <div style={{ width: 18, height: 18, border: `3px solid rgba(255,255,255,.3)`,
+                  borderTop: "3px solid #fff", borderRadius: "50%",
+                  animation: "spin 0.7s linear infinite" }}/>
+                <span>Memuat...</span>
+              </>
+            ) : (
+              <>
+                <span>MASUK KE DASBOR</span>
+                <span style={{ fontSize: 18 }}>{role.icon}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+      {/* ── DEMO HINT ── */}
+      <div style={{ margin: "14px 20px 0", padding: "12px 16px",
+        background: "rgba(255,255,255,.04)", borderRadius: 14,
+        border: "1px solid rgba(255,255,255,.08)",
+        display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 18 }}>💡</span>
+        <p style={{ fontWeight: 700, fontSize: 11, color: "rgba(255,255,255,.45)",
+          fontFamily: ff, lineHeight: 1.5, margin: 0 }}>
+          Mode Prototipe: Isi email & password apapun lalu klik tombol untuk masuk ke dasbor {role.label}.
+        </p>
+      </div>
+      {/* ── FOOTER ── */}
+      <div style={{ marginTop: "auto", padding: "20px 0 28px", textAlign: "center" }}>
+        <div style={{ fontWeight: 700, fontSize: 10, color: "rgba(255,255,255,.25)", fontFamily: ff, letterSpacing: 1 }}>
+          AKHLAQVERSE © 2026 · Versi Prototipe
+        </div>
+      </div>
+      <style>{`
+        @keyframes shake {
+          0%,100%{transform:translateX(0)}
+          20%{transform:translateX(-8px)}
+          40%{transform:translateX(8px)}
+          60%{transform:translateX(-6px)}
+          80%{transform:translateX(6px)}
+        }
+        @keyframes spin {
+          to{transform:rotate(360deg)}
+        }
+        input::placeholder { color: rgba(255,255,255,.3) !important; }
+        input:-webkit-autofill {
+          -webkit-box-shadow: 0 0 0 100px rgba(255,255,255,.08) inset !important;
+          -webkit-text-fill-color: #fff !important;
+        }
+      `}</style>
+    </div>
+  );
+};
+/* ══════════════════════════════════════════════════════════════
+   ROOT
+══════════════════════════════════════════════════════════════ */
+const WelcomeScreen = ({ onStart }) => {
+  const [btnPressed, setBtnPressed] = React.useState(false);
+  const ff = "'Nunito', sans-serif";
+  return (
+    <div style={{
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(160deg, #0a1f0a 0%, #0d3b0d 55%, #1a5e1a 100%)",
+      padding: "24px",
+      textAlign: "center",
+      position: "relative",
+      color: "#fff",
+      overflow: "hidden",
+      width: "100%",
+      height: "100%"
+    }}>
+      {/* Background Orbs and Lights */}
+      <div style={{
+        position: "absolute", top: "-50px", right: "-50px", width: "200px", height: "200px",
+        borderRadius: "50%", background: "rgba(88,204,2,0.15)", filter: "blur(40px)", pointerEvents: "none"
+      }}/>
+      <div style={{
+        position: "absolute", bottom: "-30px", left: "-30px", width: "150px", height: "150px",
+        borderRadius: "50%", background: "rgba(28,176,246,0.15)", filter: "blur(30px)", pointerEvents: "none"
+      }}/>
+      {/* Main Logo with Soft Glow */}
+      <div style={{
+        width: 90, height: 90, borderRadius: 28,
+        background: "linear-gradient(135deg, rgba(88,204,2,0.2), rgba(88,204,2,0.05))",
+        border: "2px solid rgba(88,204,2,0.45)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 44, marginBottom: 20,
+        boxShadow: "0 0 30px rgba(88,204,2,0.45), inset 0 0 12px rgba(88,204,2,0.2)",
+        animation: "floatUp 3s ease-in-out infinite",
+        textShadow: "0 0 8px rgba(255,255,255,0.4)"
+      }}>
+        🕌
+      </div>
+      {/* Title & Slogan */}
+      <h1 style={{
+        fontWeight: 900, fontSize: 30, letterSpacing: 2, marginBottom: 6,
+        fontFamily: ff, textShadow: "0 2px 8px rgba(0,0,0,0.5)"
+      }}>
+        AKHLAQVERSE
+      </h1>
+      <p style={{
+        fontWeight: 700, fontSize: 12, color: "rgba(255,255,255,0.65)",
+        fontFamily: ff, letterSpacing: 1, marginBottom: 44, maxWidth: "260px", lineHeight: 1.5
+      }}>
+        Platform Pendidikan Akhlak Digital
+      </p>
+      {/* 3D Modern Button */}
+      <div style={{ position: "relative", width: "80%" }}>
+        <div style={{
+          position: "absolute", bottom: -4, left: 0, right: 0,
+          height: "100%", borderRadius: 16,
+          background: "#46a302"
+        }}/>
+        <button
+          onMouseDown={() => setBtnPressed(true)}
+          onMouseUp={() => { setBtnPressed(false); onStart(); }}
+          onMouseLeave={() => setBtnPressed(false)}
+          onTouchStart={() => setBtnPressed(true)}
+          onTouchEnd={() => { setBtnPressed(false); onStart(); }}
+          style={{
+            position: "relative", width: "100%", border: "none",
+            borderRadius: 16, padding: "15px 0",
+            background: "linear-gradient(135deg, #58cc02, #46a302)",
+            fontFamily: ff, fontWeight: 900, fontSize: 16,
+            color: "#fff", cursor: "pointer",
+            transform: btnPressed ? "translateY(4px)" : "translateY(0)",
+            transition: "all 0.1s ease",
+            letterSpacing: 0.8,
+            boxShadow: btnPressed
+              ? "none"
+              : "0 0 0 2px #46a302, 0 6px 15px rgba(88,204,2,0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8
+          }}>
+          <span>MULAI BELAJAR</span>
+          <span style={{ fontSize: 18 }}>🚀</span>
+        </button>
+      </div>
+      {/* Footer */}
+      <div style={{ position: "absolute", bottom: 20, left: 0, right: 0, opacity: 0.25 }}>
+        <span style={{ fontWeight: 800, fontSize: 9, fontFamily: ff, letterSpacing: 1 }}>
+          VERSi PROTOTiPE · AKHLAQVERSE
+        </span>
+      </div>
+    </div>
+  );
+};
+function App(){
+  const [screen,setScreen]=useState("select");
+  // This div fills #react-root which is already 100% of the padded shell.
+  // flex:1 + minHeight:0 ensures children can scroll internally without
+  // ever making the outer shell grow or shrink.
+  const [screen,setScreen]=useState("welcome");
+  const [fadeExit,setFadeExit]=useState(false);
+  const handleStart = () => {
+    setFadeExit(true);
+    setTimeout(() => {
+      setScreen("select");
+      setFadeExit(false);
+    }, 500);
+  };
+  return(
+    <div style={{
+      flex:1,
+      minHeight:0,
+      display:"flex",
+      flexDirection:"column",
+      background:C.white,
+      overflow:"hidden",
+      position:"relative",
+    }}>
+    }} className={fadeExit ? "fade-out" : ""}>
+      {screen==="welcome"&&<WelcomeScreen onStart={handleStart}/>}
+      {screen==="select"&&<SelectScreen onSelect={setScreen}/>}
+      {screen==="student"&&<StudentDashboard onSwitch={setScreen}/>}
+      {screen==="teacher"&&<TeacherDashboard onSwitch={setScreen}/>}
+      {screen==="parent"&&<ParentDashboard onSwitch={setScreen}/>}
+    </div>
+  );
+}
+    // Mount the app — wait for DOM to be ready
+    function mountApp() {
+      const container = document.getElementById('react-root');
+      if (!container) {
+        console.error('AKHLAQVERSE: #react-root not found!');
+        return;
+      }
+      if (!window.React || !window.ReactDOM) {
+        console.error('AKHLAQVERSE: React/ReactDOM not loaded!');
+        return;
+      }
+      try {
+        const reactRoot = ReactDOM.createRoot(container);
+        // Hide loading screen before rendering
+        const loader = document.getElementById('loading-screen');
+        if (loader) loader.style.display = 'none';
+        reactRoot.render(<App />);
+        console.log('AKHLAQVERSE: Mounted successfully ✅');
+      } catch(e) {
+        console.error('AKHLAQVERSE mount error:', e);
+        container.innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif"><b>Error loading app:</b><br>' + e.message + '</div>';
+      }
+    }
+    mountApp();
+  </script>
+</body>
+</html>
